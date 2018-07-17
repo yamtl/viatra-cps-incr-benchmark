@@ -27,7 +27,7 @@ import org.eclipse.viatra.examples.cps.xform.m2m.incr.expl.CPS2DeploymentTransfo
 import org.eclipse.viatra.query.runtime.api.AdvancedViatraQueryEngine
 import org.eclipse.viatra.query.runtime.emf.EMFScope
 
-class Cps2DepRunner_clientServer_ViatraExpl_modification_full extends FullBenchmarkRunner {
+class Cps2DepRunner_ViatraExpl_full_clientServer_modification extends FullBenchmarkRunner {
 	CPS2DeploymentTransformation xform 
 	AdvancedViatraQueryEngine engine  
     var CPSToDeployment cps2dep

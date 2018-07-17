@@ -1,6 +1,6 @@
 package experiments.expl
 
-import experiments.utils.BenchmarkRunner
+import experiments.utils.FullBenchmarkRunner
 import java.io.File
 import java.io.IOException
 import java.util.HashMap
@@ -27,7 +27,7 @@ import org.eclipse.viatra.examples.cps.xform.m2m.incr.expl.CPS2DeploymentTransfo
 import org.eclipse.viatra.query.runtime.api.AdvancedViatraQueryEngine
 import org.eclipse.viatra.query.runtime.emf.EMFScope
 
-class Cps2DepRunner_clientServer_ViatraExpl_modification extends BenchmarkRunner {
+class Cps2DepRunner_ViatraExpl_statisticBased_full_modification extends FullBenchmarkRunner {
 	CPS2DeploymentTransformation xform 
 	AdvancedViatraQueryEngine engine 
     var CPSToDeployment cps2dep
@@ -37,29 +37,28 @@ class Cps2DepRunner_clientServer_ViatraExpl_modification extends BenchmarkRunner
     
     
 	override getIdentifier() {
-		"cps2dep_clientServer_viatraExpl_modification"
+		"cps2dep_statisticBased_viatraExpl_modification"
 	}
 	
 	override getIterations() {
-//		#[1, 1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
-		#[1, 1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
+		#[1, 1, 2, 4, 8, 16, 32, 64]
 //		#[1]
 	}
 
 	def static void main(String[] args) {
-		val runner = new Cps2DepRunner_ViatraExpl_clientServer_modification
-		runner.runBenchmark
+		val runner = new Cps2DepRunner_ViatraExpl_statisticBased_full_modification
+		runner.runBenchmark(10)
 	} 
 	
 	override doLoad(String iteration) {
 		doStandaloneEMFSetup()
 		
-		var String inputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/clientServer/cps'''
-		var String outputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/clientServer/deployment/viatraExpl'''
+		var String inputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/statistics/'''
+		var String outputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/statistics/deployment/viatraExpl'''
 
 		cps2dep = preparePersistedCPSModel(
 			URI.createFileURI(new File(inputModelPath).absolutePath),
-			'''clientServer_«iteration»''',
+			'''statistics_«iteration»''',
 			URI.createFileURI(new File(outputModelPath).absolutePath)
 		)
 	}
@@ -72,12 +71,12 @@ class Cps2DepRunner_clientServer_ViatraExpl_modification extends BenchmarkRunner
 		xform = new CPS2DeploymentTransformation
 		xform.initialize(cps2dep, engine)
 		xform.execute()
-		appType = cps2dep.cps.appTypes.findFirst[it.identifier.contains("Client")]
-		hostInstance = cps2dep.cps.hostTypes.findFirst[it.identifier.contains("client")].instances.head
+		appType = cps2dep.cps.appTypes.findFirst[it.identifier.contains("AC_withStateMachine")]
+		hostInstance = cps2dep.cps.hostTypes.findFirst[it.identifier.contains("HC_appContainer")].instances.head
 	}
 	
 	override doTransformation() {
-		val appID = "new.app.instance" + "_NEW" // nextModificationIndex 
+		val appID = "new.app.instance" + "_NEW" // cpsToken.nextModificationIndex 
 		appType.prepareApplicationInstanceWithId(appID, hostInstance)
 	}
 	

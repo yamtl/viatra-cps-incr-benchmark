@@ -1,6 +1,6 @@
 package experiments.qrt
 
-import experiments.utils.BenchmarkRunner
+import experiments.utils.FullBenchmarkRunner
 import java.io.File
 import java.io.IOException
 import java.util.Collections
@@ -28,35 +28,32 @@ import org.eclipse.viatra.examples.cps.xform.m2m.incr.qrt.CPS2DeploymentTransfor
 import org.eclipse.viatra.query.runtime.api.AdvancedViatraQueryEngine
 import org.eclipse.viatra.query.runtime.emf.EMFScope
 
-class Cps2DepRunner_ViatraQrt_modification extends BenchmarkRunner {
+class Cps2DepRunner_ViatraQrt_full_clientServer_modification extends FullBenchmarkRunner {
 	CPS2DeploymentTransformationQrt xform 
 	AdvancedViatraQueryEngine engine
     var CPSToDeployment cps2dep
     extension CPSModelBuilderUtil builderUtil = new CPSModelBuilderUtil
     
 	override getIdentifier() {
-		"cps2dep_clientServer_viatraQrt_modification"
-//		"cps2dep_publishSubscribe_viatraEiq"
+		"cps2dep_clientServer_viatraQrt"
 	}
 	
 	override getIterations() {
+		#[1, 1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
 //		#[1, 1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
-//		#[1, 1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]
-		#[1]
+//		#[1]
 	}
 
 	def static void main(String[] args) {
-		val runner = new Cps2DepRunner_ViatraQrt_modification
-		runner.runBenchmark
+		val runner = new Cps2DepRunner_ViatraQrt_full_clientServer_modification
+		runner.runBenchmark(10)
 	} 
 	
 	override doLoad(String iteration) {
 		doStandaloneEMFSetup()
 		
-		var String inputModelPath = '''/Users/ab373/Documents/ArturData/WORK/git/viatra-cps-batch-benchmark/m2m.batch.data/cps2dep/clientServer/cps'''
-		var String outputModelPath = '''/Users/ab373/Documents/ArturData/WORK/git/viatra-cps-batch-benchmark/m2m.batch.data/cps2dep/clientServer/deployment/viatraQrt'''
-//		var String inputModelPath = '''../m2m.batch.data/cps2dep/publishSubscribe/cps'''
-//		var String outputModelPath = '''../m2m.batch.data/cps2dep/publishSubscribe/deployment/viatraQrt'''
+		var String inputModelPath = '''../m2m.batch.data/cps2dep/clientServer/cps'''
+		var String outputModelPath = '''../m2m.batch.data/cps2dep/clientServer/deployment/viatraQrt'''
 
 		cps2dep = preparePersistedCPSModel(
 			URI.createFileURI(new File(inputModelPath).absolutePath),
@@ -65,11 +62,10 @@ class Cps2DepRunner_ViatraQrt_modification extends BenchmarkRunner {
 		)
 	}
 	
-	    
 	
 	var ApplicationType appType
 	var HostInstance hostInstance
-	
+	    
 	override doInitialization() {
 		engine = AdvancedViatraQueryEngine.createUnmanagedEngine(new EMFScope(cps2dep.eResource.resourceSet));
 		xform = new CPS2DeploymentTransformationQrt
@@ -83,7 +79,6 @@ class Cps2DepRunner_ViatraQrt_modification extends BenchmarkRunner {
 		val appID = "new.app.instance" + "_NEW" // nextModificationIndex 
 		appType.prepareApplicationInstanceWithId(appID, hostInstance)
 	}
-	
 	
 	override doSave(String iteration) {
 		try {
@@ -170,7 +165,7 @@ class Cps2DepRunner_ViatraQrt_modification extends BenchmarkRunner {
 		trcRes.contents += cps2dep
 		cps2dep
 	}
-
+	
 	
 } 
  
