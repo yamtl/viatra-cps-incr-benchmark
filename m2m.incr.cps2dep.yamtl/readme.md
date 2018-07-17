@@ -6,7 +6,7 @@ This project reuses the same transformation used for the batch component of the 
 
 The most relevant changes are the following:
 
-* [Configuration of transformation in the runners for the various scenarios](https://github.com/yamtl/viatra-cps-batch-benchmark/tree/master/m2m.incr.cps2dep.yamtl/src/main/java/experiments/yamtl)
+* [Configuration of transformation in the runners for the various scenarios](https://github.com/yamtl/viatra-cps-incr-benchmark/tree/master/m2m.incr.cps2dep.yamtl/src/main/java/experiments/yamtl)
     * `Cps2DepRunner_YAMTL_SCENARIO`: runs one single experiment for models of different sizes of `SCENARIO`
     * `Cps2DepRunner_YAMTL_SCENARIO_full`: runs several experiments for models of different sizes of `SCENARIO`
 * Configuration of the project with AspectJ:
