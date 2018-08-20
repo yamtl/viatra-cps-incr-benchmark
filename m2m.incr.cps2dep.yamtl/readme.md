@@ -1,4 +1,4 @@
-# Benchmark CPS2DEP variant YAMTL (incremental)
+# Benchmark CPS2DEP variant YAMTL (incremental variant run in incremental mode)
 
 This project provides a solution of the **incremental** component of the [VIATRA CPS benchmark](https://github.com/viatra/viatra-cps-benchmark) using the [YAMTL engine](https://yamtl.github.io).
 
@@ -16,9 +16,15 @@ The most relevant files are the following:
     * [Gradle build file](./build.gradle)
     * [aop.xml](./src/test/java/META-INF/aop.xml)
 
+## Running the benchmark
+
 To run the benchmark:
 1. Select the corresponding runner in the Gradle build file, by setting `mainClassName`.
 2. Run the command `./gradlew clean run` .
+
+## Running the benchmark sanity checks
+
+The benchmark sanity checks have been adapted as explained [here](https://github.com/yamtl/viatra-cps-batch-benchmark/tree/master/m2m.batch.cps2dep.yamtl#benchmark-sanity-checks). In addition, changes need to be recorded explicitly, which is achieved using the method `Cps2DepTestDriver_YAMTL::executeTransformation(String, () => Map<String,EObject>)`. 
 
 To run the tests:
 1. Install AJDT 2.2.4
