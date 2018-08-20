@@ -1,6 +1,5 @@
 <aspectj>
     <aspects>
-        <!-- aspect name="eu.ibacz.pbns.util.aspect.TimingAspect"/--> <!--  fails if not found -->
         <aspect name="cps2dep.yamtl.FeatureCallAspect"/>
     </aspects>
     <weaver options="-verbose -showWeaveInfo"> <!-- add -debug to print every class [not] woven  -->
