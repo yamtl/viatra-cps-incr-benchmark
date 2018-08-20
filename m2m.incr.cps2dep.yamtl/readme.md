@@ -24,7 +24,7 @@ To run the benchmark:
 
 ## Running the benchmark sanity checks
 
-The benchmark sanity checks have been adapted as explained [here](https://github.com/yamtl/viatra-cps-batch-benchmark/tree/master/m2m.batch.cps2dep.yamtl#benchmark-sanity-checks). In addition, changes need to be recorded explicitly, which is achieved using the method `Cps2DepTestDriver_YAMTL::executeTransformation(String, () => Map<String,EObject>)`. 
+The benchmark sanity checks have been adapted as explained [here](https://github.com/yamtl/viatra-cps-batch-benchmark/tree/master/m2m.batch.cps2dep.yamtl#benchmark-sanity-checks). In addition, changes need to be recorded explicitly, which is achieved using the method `experiments.yamtl.Cps2DepTestDriver_YAMTL::executeTransformation(String, () => Map<String,EObject>)` (under `src/test/java`).
 
 To run the tests:
 1. Install AJDT 2.2.4

@@ -15,7 +15,8 @@ Below we provide pointers to the solutions of the transformation used in our ada
 ### Solutions used in our experiments
 
 Our solution:
-* [YAMTL](https://github.com/yamtl/viatra-cps-incr-benchmark/tree/master/m2m.incr.cps2dep.yamtl)
+* [YAMTL incremental variant (run in batch mode)](https://github.com/yamtl/viatra-cps-incr-benchmark/tree/master/m2m.incr.cps2dep.yamtl.batch)
+* [YAMTL incremental variant (run in incremental mode)](https://github.com/yamtl/viatra-cps-incr-benchmark/tree/master/m2m.incr.cps2dep.yamtl)
 
 Existing solutions that have been reused:
 
