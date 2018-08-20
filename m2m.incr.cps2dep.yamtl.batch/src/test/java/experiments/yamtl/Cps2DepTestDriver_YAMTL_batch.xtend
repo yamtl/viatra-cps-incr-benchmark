@@ -14,9 +14,6 @@ class Cps2DepTestDriver_YAMTL_batch {
 	protected extension Logger logger = Logger.getLogger("Cps2DepTestDriver_YAMTL")
 	
 	@Accessors
-	val static public ROOT_PATH = '/Users/ab373/Documents/ArturData/WORK/ECLIPSE/RESEARCH/2018_research_photon_yamtl/yamtl.examples.mapping.incr.cps2dep/src/main/resources/cps2dep/output'
-	
-	@Accessors
 	var Cps2DepYAMTL xform 
 	
 	def initializeTransformation(CPSToDeployment cps2dep) {
@@ -43,7 +40,6 @@ class Cps2DepTestDriver_YAMTL_batch {
 		xform.transitionToBTransitionList.clear()
 		xform.stateToBStateList.clear()
 		xform.smToBehList.clear()
-//		xform.reachableWaitForTransitionsMap.clear()
 		xform.depAppToAppInstance.clear()
 		xform.reset()
 		
