@@ -66,13 +66,6 @@ class Cps2DepRunner_ClientServer_YAMTL_batch extends BenchmarkRunner {
 	}
 	
 	override doTransformation(String iteration) {
-		xform.mapping.traces.clear
-		xform.transitionToBTransitionList.clear
-		xform.stateToBStateList.clear
-		xform.smToBehList.clear
-		xform.depAppToAppInstance.clear
-		xform.reset()
-		
 		xform.execute()
 
 		// extract DEP model		
@@ -92,8 +85,14 @@ class Cps2DepRunner_ClientServer_YAMTL_batch extends BenchmarkRunner {
 	}
 	
 	override doDispose() {
+		xform.mapping.traces.clear
+		xform.transitionToBTransitionList.clear
+		xform.stateToBStateList.clear
+		xform.smToBehList.clear
+		xform.depAppToAppInstance.clear
 		xform.reset()
 		rootObjects = null
+		xform = null
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////
