@@ -1,0 +1,12 @@
+.classpath
+.gradle
+.project
+.settings
+bin
+build
+xtend-gen
+src/main/xtend-gen
+*.csv
+/META-INF/
+/plugin.properties
+/plugin.xml

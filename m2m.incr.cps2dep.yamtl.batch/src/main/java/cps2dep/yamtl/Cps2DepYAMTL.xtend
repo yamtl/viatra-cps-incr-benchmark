@@ -1,0 +1,604 @@
+package cps2dep.yamtl
+
+import java.util.ArrayList
+import java.util.List
+import java.util.Map
+import java.util.Set
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.ApplicationInstance
+import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.ApplicationType
+import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.CyberPhysicalSystem
+import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.CyberPhysicalSystemPackage
+import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.HostInstance
+import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.Identifiable
+import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.State
+import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.StateMachine
+import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.Transition
+import org.eclipse.viatra.examples.cps.deployment.BehaviorState
+import org.eclipse.viatra.examples.cps.deployment.BehaviorTransition
+import org.eclipse.viatra.examples.cps.deployment.Deployment
+import org.eclipse.viatra.examples.cps.deployment.DeploymentApplication
+import org.eclipse.viatra.examples.cps.deployment.DeploymentBehavior
+import org.eclipse.viatra.examples.cps.deployment.DeploymentElement
+import org.eclipse.viatra.examples.cps.deployment.DeploymentHost
+import org.eclipse.viatra.examples.cps.deployment.DeploymentPackage
+import org.eclipse.viatra.examples.cps.traceability.CPSToDeployment
+import org.eclipse.viatra.examples.cps.traceability.TraceabilityFactory
+import org.eclipse.xtend.lib.annotations.Accessors
+import yamtl.core.MatchMap
+import yamtl.core.YAMTLModule
+import yamtl.dsl.Helper
+import yamtl.dsl.Rule
+import yamtl.utils.FetchUtil
+
+class Cps2DepYAMTL extends YAMTLModule {
+	
+	@Accessors
+	CPSToDeployment mapping;
+	
+	val CPS = CyberPhysicalSystemPackage.eINSTANCE  
+	val DEP = DeploymentPackage.eINSTANCE  
+	
+
+	/**
+	 * Creates a new transformation instance. The input cyber physical system model is given in the mapping
+	 * @param mapping the traceability model root
+	 */
+	new () {
+		header().in('cps', CPS).out('dep', DEP)
+		
+				
+		helperStore( #[
+			new Helper('waitingTransitions') [
+				val Map<String,List<Transition>> reachableWaitForTransitionsMap = newHashMap	 
+				CPS.transition.allInstances.forEach[ transition |
+					val targetTransition = transition as Transition
+					
+					if (targetTransition.action?.isWaitSignal) {
+						val signalId = targetTransition.action.waitTransitionSignalId
+						val list = reachableWaitForTransitionsMap.get(signalId)
+						if (list === null) {
+							reachableWaitForTransitionsMap.put(signalId, newArrayList(targetTransition))
+						} else {
+							list.add(targetTransition)
+						}
+					} 
+				]
+				
+				reachableWaitForTransitionsMap
+			]
+			.build,
+
+			new Helper('sendingTransitions') [
+				val Map<String,List<Transition>> sendTransitionsMap = newHashMap	 
+				CPS.transition.allInstances.forEach[ transition |
+					val targetTransition = transition as Transition
+					
+					if (targetTransition.action?.isSignal) {
+						val signalId = targetTransition.action.signalId
+						val list = sendTransitionsMap.get(signalId)
+						if (list === null) {
+							sendTransitionsMap.put(signalId, newArrayList(targetTransition))
+						} else {
+							list.add(targetTransition)
+						}
+
+						// when a transition changes its action
+						// triggers need to be reset
+						val depTransitionList=transitionToBTransitionList.get(targetTransition)
+						if (depTransitionList!==null) {
+							for (senderBehaviorTransition: depTransitionList) {
+								senderBehaviorTransition.trigger.clear()
+							}
+						}
+					} 
+				]
+				
+				sendTransitionsMap
+			]
+			.build
+		])
+		
+		ruleStore( #[
+			
+			new Rule('CyberPhysicalSystem_2_Deployment')
+				.priority(0)
+				.in('cps', CPS.cyberPhysicalSystem).build
+				.out('out', DEP.deployment, [ 
+					val cps = 'cps'.fetch as CyberPhysicalSystem
+					val out = 'out'.fetch as Deployment
+					
+					val deploymentHosts = cps.hostTypes.map[instances].flatten
+						.fetch as List<DeploymentHost>
+					out.hosts += deploymentHosts 
+				]).build
+				.build,
+			
+			new Rule('HostInstance_2_DeploymentHost')
+				.priority(0)
+				.in('hostInstance', CPS.hostInstance).build
+				.out('out', DEP.deploymentHost, 
+					[ 
+						val hostInstance = 'hostInstance'.fetch as HostInstance
+						val out = 'out'.fetch as DeploymentHost
+						
+						out.ip = hostInstance.nodeIp
+						
+						val deploymentApps = hostInstance.applications.fetch as List<DeploymentApplication>
+						out.applications += deploymentApps
+					]).build
+				.build,
+	
+			new Rule('ApplicationInstance_2_DeploymentApplication')
+				.priority(0)
+				.in('appInstance', CPS.applicationInstance)
+					.filter([
+						val appInstance = 'appInstance'.fetch as ApplicationInstance
+						appInstance.allocatedTo !== null
+					])
+					.build
+				.out('out', DEP.deploymentApplication,
+					[ 
+						val appInstance = 'appInstance'.fetch as ApplicationInstance
+						val out = 'out'.fetch as DeploymentApplication
+						
+						out.id = appInstance.identifier
+						// Transform state machines
+						val behavior = appInstance.type?.behavior?.fetch('StateMachine_2_DeploymentBehavior') as DeploymentBehavior
+						out.behavior = behavior
+						
+   						appInstance.trackApplicationInstance(out)
+					]
+				).undo[
+					val appInstance = 'appInstance'.fetch as ApplicationInstance
+					val out = 'out'.fetch as DeploymentApplication
+					
+					depAppToAppInstance.remove(out)
+					
+					if (!smToBehList.isEmpty) {
+						val sm = smToBehList.entrySet.findFirst[it.value.contains(out.behavior)].key
+						
+						val behList = smToBehList.get(sm)
+						if (behList !== null)
+							behList.remove(out.behavior)
+						if (behList.isEmpty)
+							smToBehList.remove(sm)
+							
+						val smContents = sm.eAllContents
+						if (smContents !== null && smContents.hasNext()) {
+							for (element: smContents.toList) {
+								if (!stateToBStateList.isEmpty) {
+									if (element instanceof State) {
+										val sList = stateToBStateList.get(element).reject[ behState | behState.eContainer == out.behavior ].toSet
+										
+										if (sList.isEmpty)
+											stateToBStateList.remove(element)
+										else
+											stateToBStateList.put(
+												element, 
+												sList	
+											)
+									}
+								}
+								if (!transitionToBTransitionList.isEmpty) {
+									if (element instanceof Transition) {
+										val tList = transitionToBTransitionList.get(element).reject[ behTransition | behTransition.eContainer == out.behavior ].toSet
+										
+										if (tList.isEmpty)
+											transitionToBTransitionList.remove(element)
+										else
+											transitionToBTransitionList.put(
+												element, 
+												tList
+											)
+										
+										val transition = element as Transition
+										if (transition.action?.isSignal)
+											this.insertDependency('Transition_2_BehaviorTransition_Trigger', transition)
+										else {
+											val signalId = transition.action?.waitTransitionSignalId
+											if (signalId !== null) {
+												val sendingTransitionMap = 'sendingTransitions'.fetch as Map<String,List<Transition>> 
+												val sendingTransitionList = sendingTransitionMap.get(signalId)
+												if (sendingTransitionList !== null) {
+													for (sendingTransition : sendingTransitionList) {
+														this.insertDependency('Transition_2_BehaviorTransition_Trigger', sendingTransition)
+													}
+												}
+											}
+										} 	
+											
+									}
+								}
+							}
+						}
+					}
+				].build
+				.build,
+	
+			new Rule('StateMachine_2_DeploymentBehavior')
+				.lazy
+				.in('stateMachine', CPS.stateMachine).build
+				.out('out', DEP.deploymentBehavior,
+					[ 
+						val stateMachine = 'stateMachine'.fetch as StateMachine
+						val out = 'out'.fetch as DeploymentBehavior
+						
+						out.description = stateMachine.identifier
+
+						// Transform states
+						val behaviorStates = stateMachine.states.fetch('State_2_BehaviorState') as List<BehaviorState>
+						out.states += behaviorStates 
+						
+						// Transform transitions
+						var behaviorTransitions = new ArrayList<BehaviorTransition>
+						for (state : stateMachine.states) {
+							behaviorTransitions += 
+								state.outgoingTransitions.fetch('Transition_2_BehaviorTransition') as List<BehaviorTransition>
+						}
+						out.transitions += behaviorTransitions
+				
+						// set current state
+						val initial = stateMachine.states.findFirst[stateMachine.initial == it]
+						val initialBehaviorState = initial.fetch('State_2_BehaviorState') as BehaviorState
+						out.current = initialBehaviorState
+						
+						trackStateMachine(stateMachine, out)
+					]
+				).build
+				.build,
+	
+			new Rule('State_2_BehaviorState')
+				.uniqueLazy
+				.in('state', CPS.state).build
+				.out('out', DEP.behaviorState,
+					[ 
+						val state = 'state'.fetch as State
+						val out = 'out'.fetch as BehaviorState
+						
+						out.description = state.identifier
+						out.outgoing += state.outgoingTransitions.fetch('Transition_2_BehaviorTransition') as List<BehaviorTransition> 
+
+						trackState(state,out)
+					]
+				).build
+				.build,
+	
+			new Rule('Transition_2_BehaviorTransition')
+				.uniqueLazy
+				.in('transition', CPS.transition)
+					.filter( [
+						val transition = 'transition'.fetch as Transition 
+						transition.targetState !== null
+					]).build
+				.out('out', DEP.behaviorTransition, 
+					[ 
+						val transition = 'transition'.fetch as Transition
+						val out = 'out'.fetch as BehaviorTransition
+						
+						out.description = transition.identifier
+		
+						val targetBehaviorState = transition.targetState.fetch('State_2_BehaviorState') as BehaviorState
+						out.to = targetBehaviorState
+						
+						trackTransition(transition,out)
+						
+						// explicit dependency
+						if (transition.action?.isSignal)
+							this.insertDependency('Transition_2_BehaviorTransition_Trigger', transition)
+						else {
+							val signalId = transition.action?.waitTransitionSignalId
+							if (signalId !== null) {
+								val sendingTransitionMap = 'sendingTransitions'.fetch as Map<String,List<Transition>> 
+								val sendingTransitionList = sendingTransitionMap.get(signalId)
+								if (sendingTransitionList !== null) {
+									for (sendingTransition : sendingTransitionList) {
+										this.insertDependency('Transition_2_BehaviorTransition_Trigger', sendingTransition)
+									}
+								}
+							}
+						} 	
+					]
+				).build
+				.build,
+				
+			new Rule('Transition_2_BehaviorTransition_Trigger')
+				.isTransient
+				.in('transition', CPS.transition)
+					.filter( [
+						val transition = 'transition'.fetch as Transition 
+						transition.targetState !== null
+						&&
+						transition.action?.isSignal
+					]).build
+				.out('out', DEP.behaviorTransition, 
+					[ 
+						val transition = 'transition'.fetch as Transition
+						
+						// initialize triggers for the corresponding DEP transitions
+						transitionToBTransitionList.get(transition)?.forEach[it.trigger.clear()]										
+						
+						val waitingTransitions = 'waitingTransitions'.fetch as Map<String,List<Transition>> 
+						val waitingTransitionsList = waitingTransitions.get(transition.action.signalId)
+						
+						// triggers have to be processed at the end
+						// because we need to access generated behaviorTransitions 
+						// (in case several behaviors were obtained from the same state machine)
+						if (waitingTransitionsList!==null) {
+							for (triggeredTransition: waitingTransitionsList) {
+								if (triggeredTransition.belongsToApplicationType(transition.action.appTypeId)) {
+								
+									val list = transitionToBTransitionList.get(transition)
+									
+									if (list!==null) {
+										list.forEach[ senderBehaviorTransition |
+											
+											val bTransitionList = transitionToBTransitionList.get(triggeredTransition)
+			
+											if (bTransitionList !== null) {
+												
+												val reachableTransitionList = newArrayList
+				
+												for (receiverBehaviorTransition: bTransitionList) {
+													val senderDepApp = senderBehaviorTransition.eContainer.eContainer as DeploymentApplication
+													val senderAppIntance = depAppToAppInstance.get(senderDepApp)
+													
+													val receiverDepApp = receiverBehaviorTransition.eContainer.eContainer as DeploymentApplication
+													val receiverAppIntance = depAppToAppInstance.get(receiverDepApp)
+													
+													if (senderAppIntance.reaches(receiverAppIntance)) {
+														reachableTransitionList.add(receiverBehaviorTransition)
+													}
+												}
+				
+												senderBehaviorTransition.trigger +=  reachableTransitionList
+											}
+										]
+									}
+								}
+							}
+						}	
+						
+					]
+				).build
+			.build
+		])
+		
+		if (debug) println("constructor")
+	}
+	
+	
+	
+		
+	/** 
+	 * HELPERS: fetching reachable application types
+	 */
+	@Accessors
+	val Map<DeploymentApplication,ApplicationInstance> depAppToAppInstance = newHashMap
+	def trackApplicationInstance(ApplicationInstance appInstance, DeploymentApplication depApp) {
+		depAppToAppInstance.put(depApp, appInstance)
+	}
+
+	def reaches(ApplicationInstance fromApp, ApplicationInstance toApp) {
+		fromApp.allocatedTo !== null
+		&& 
+		(
+			fromApp.allocatedTo == toApp.allocatedTo
+			||
+			fromApp.allocatedTo.communicateWith.contains(toApp.allocatedTo)
+		)
+	}
+	
+	
+	def applicationType(Transition t) {
+		// transition -> containing state -> state machine -> application type
+		t.eContainer.eContainer.eContainer as ApplicationType
+	}
+	
+	def belongsToApplicationType(Transition t, String appTypeId) {
+		// transition -> containing state -> state machine -> application type
+		val appType = t.eContainer.eContainer.eContainer as ApplicationType
+		appType.identifier == appTypeId
+	}
+
+
+	def isSignal(String action) {
+		action.startsWith('sendSignal')
+	}
+	def isWaitSignal(String action) {
+		action.startsWith("waitForSignal")
+	}
+	def isWaitSignal(String action, String signalId) {
+		val expectedAction = '''waitForSignal(«signalId»)'''
+		action == expectedAction
+	}
+	def String getAppTypeId(String action) {
+		val String[] contents = action.substring(action.indexOf('(')+1,action.lastIndexOf(')')).split(',') 
+		contents.get(0).trim()
+	}
+	def String getSignalId(String action) {
+		val String[] contents = action.substring(action.indexOf('(')+1,action.lastIndexOf(')')).split(',') 
+		contents.get(1).trim()
+	}
+	def String getWaitTransitionSignalId(String action) {
+		val String[] contents = action.substring(action.indexOf('(')+1,action.lastIndexOf(')')).split(',') 
+		contents.get(0).trim()
+	}
+
+	def saveTraceModel(String traceModelPath) {
+		saveModel(traceModelPath, #[mapping])
+	}
+
+	def getTraceModel() {
+		mapping.traces.clear()
+		mapping.fetchCPS2DepTraces
+	}
+	
+	/**
+	 * TRACEABILITY MODEL PERSISTENCE
+	 */
+	@Accessors
+	val Map<Transition,Set<BehaviorTransition>> transitionToBTransitionList = newHashMap
+	
+	def trackTransition(Transition t, BehaviorTransition bt) {
+		val list = transitionToBTransitionList.get(t)
+		if (list===null) {
+			transitionToBTransitionList.put(t, newLinkedHashSet(bt))
+		} else {
+			list.add(bt)
+		}
+	}
+	
+	@Accessors
+	val Map<State,Set<BehaviorState>> stateToBStateList = newHashMap
+	
+	def trackState(State s, BehaviorState bs) {
+		val list = stateToBStateList.get(s)
+		if (list===null) {
+			stateToBStateList.put(s, newLinkedHashSet(bs))
+		} else {
+			list.add(bs)
+		}
+	}
+
+	@Accessors
+	val Map<StateMachine,Set<DeploymentBehavior>> smToBehList = newHashMap
+	
+	def trackStateMachine(StateMachine sm, DeploymentBehavior db) {
+		val list = smToBehList.get(sm)
+		if (list===null) {
+			smToBehList.put(sm, newLinkedHashSet(db))
+		} else {
+			list.add(db)
+		}
+	}
+		 
+	def void fetchCPS2DepTraces(CPSToDeployment cps2dep) {
+		val Set<String> visitedStateMachineIds = newHashSet
+		val Set<String> visitedStateIds = newHashSet
+		val Set<String> visitedTransitionIds = newHashSet
+		
+		for (redux : getTrafoStepList()) {
+			cps2dep.processTrafoStep(redux, visitedStateMachineIds, visitedStateIds, visitedTransitionIds)
+		}
+	}
+
+
+	def List<MatchMap> getTrafoStepList() {
+		val list = newArrayList
+		
+		var  Map<EObject,Map<String,List<MatchMap>>>  matchPool
+		if (this.executionMode == ExecutionMode.PROPAGATION)
+			matchPool = this.engine.deltaMatchPool
+		else 
+			matchPool = this.engine.matchPool
+		
+		for (sourceObjectEntry : matchPool.entrySet) {
+			for (ruleNameEntry : sourceObjectEntry.value.entrySet) {
+				for (redux : ruleNameEntry.value) {
+					if ((!redux.dirty) && (!redux.rule.transient))
+						list.add(redux)
+				}
+			}
+		}	
+		for (sourceObjectEntry : engine.lazyMatchPool.entrySet) {
+			for (ruleNameEntry : sourceObjectEntry.value.entrySet) {
+				for (redux : ruleNameEntry.value) {
+					if ((!redux.dirty) && (!redux.rule.transient)) {
+						list.add(redux)
+					
+						val uniqueLazyMatchPool = redux.frame.store.get(FetchUtil.UNIQUE_LAZY_MATCH_POOL) as Map<EObject,Map<String,List<MatchMap>>>
+						for (sourceObjectEntry2 : uniqueLazyMatchPool.entrySet) {
+							for (ruleNameEntry2 : sourceObjectEntry2.value.entrySet) {
+								for (redux2 : ruleNameEntry2.value) {
+									if ((!redux2.dirty) && (!redux2.rule.transient))
+										list.add(redux2)
+								}
+							}
+						}
+						
+					}
+				}
+			}
+		}
+		return list
+	}
+
+	def void processTrafoStep(CPSToDeployment cps2dep, MatchMap redux, Set<String> visitedStateMachineIds, Set<String> visitedStateIds, Set<String> visitedTransitionIds) {
+		if (!CyberPhysicalSystem.isInstance(redux.defaultInObject)) {
+			val sourceObject = redux.defaultInObject
+			
+			val rName = redux.rule.name
+			
+			redux.targetMatch.match.forEach[outName, pair |
+				switch (redux.rule.name) {
+					case 'StateMachine_2_DeploymentBehavior': {
+						val sm = sourceObject as StateMachine
+						if (!visitedStateMachineIds.contains(sm.identifier)) {
+							visitedStateMachineIds.add(sm.identifier)
+							val bStateMachineList = smToBehList.get(sm)
+
+							if (bStateMachineList !== null) {
+								val list = bStateMachineList.reject([it.eContainer === null])
+								if (!list.isEmpty) {
+									val trace = TraceabilityFactory.eINSTANCE.createCPS2DeploymentTrace
+									trace.cpsElements.add(sourceObject as Identifiable)
+									trace.deploymentElements.addAll(list)
+									cps2dep.traces.add(trace)
+								}
+							}
+						}
+					}
+					case 'State_2_BehaviorState': {
+						val state = sourceObject as State
+						if (!visitedStateIds.contains(state.identifier)) {
+							visitedStateIds.add(state.identifier)
+							val bStateList = stateToBStateList.get(state)
+							
+							if (bStateList !== null) {
+								val list = bStateList.reject([it.eContainer ===null || it.eContainer.eContainer === null])
+								if (!list.isEmpty) {
+									val trace = TraceabilityFactory.eINSTANCE.createCPS2DeploymentTrace
+									trace.cpsElements.add(sourceObject as Identifiable)
+									trace.deploymentElements.addAll(list)
+									cps2dep.traces.add(trace)
+								}
+							}
+						}
+					}
+					case 'Transition_2_BehaviorTransition': {
+						val transition = sourceObject as Transition
+						if (!visitedTransitionIds.contains(transition.identifier)) {
+							visitedTransitionIds.add(transition.identifier)
+							val bTransitionList = transitionToBTransitionList.get(transition)
+							
+							if (bTransitionList !== null) {
+								val list = bTransitionList.reject([it.eContainer ===null || it.eContainer.eContainer === null])
+								if (!list.isEmpty) {
+									val trace = TraceabilityFactory.eINSTANCE.createCPS2DeploymentTrace
+									trace.cpsElements.add(sourceObject as Identifiable)
+									trace.deploymentElements.addAll(list)
+									cps2dep.traces.add(trace)
+								}
+							}
+						}
+					}
+					case 'Transition_2_BehaviorTransition_Trigger': {}
+					default: {
+						val targetObject = pair.value as DeploymentElement
+						
+						if (targetObject.eContainer !== null) {
+							val trace = TraceabilityFactory.eINSTANCE.createCPS2DeploymentTrace
+							trace.cpsElements.add(sourceObject as Identifiable)
+							trace.deploymentElements.add(targetObject as DeploymentElement)
+							cps2dep.traces.add(trace)
+						}
+						
+					}
+				}
+			]
+		}
+		
+	}
+}
+
