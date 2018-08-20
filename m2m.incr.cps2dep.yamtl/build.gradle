@@ -10,29 +10,32 @@ apply plugin: 'eclipse'
 apply plugin: 'application'
 
 
-mainClassName = "experiments.yamtl.Cps2DepRunner_ClientServer_YAMTL_modification_full"
-//mainClassName = "experiments.yamtl.Cps2DepRunner_ClientServer_YAMTL_full_modification"
+mainClassName = "experiments.yamtl.Cps2DepRunner_ClientServer_YAMTL_modification"
+//mainClassName = "experiments.yamtl.Cps2DepRunner_ClientServer_YAMTL_modification_full"
+//mainClassName = "experiments.yamtl.Cps2DepRunner_StatisticBased_YAMTL_modification_full"
+
 applicationDefaultJvmArgs = ["-Xmx12288m"]
 
 
-sourceCompatibility = 1.8
+
+ext {
+	xtendVersion = '2.14.0'
+}
 
 eclipse {
 	project {
 	  name = 'm2m.incr.cps2dep.yamtl'
 	  buildCommand 'org.eclipse.jdt.core.javabuilder'
-//	  buildCommand 'org.eclipse.ajdt.core.ajbuilder'
+	  buildCommand 'org.eclipse.ajdt.core.ajbuilder'
 	  buildCommand 'org.eclipse.buildship.core.gradleprojectbuilder'
 	  buildCommand 'org.eclipse.wst.common.project.facet.core.builder'
-	  buildCommand 'org.eclipse.viatra.query.tooling.ui.projectbuilder'
 
 	  natures 'org.eclipse.jdt.core.javanature',
-//	  	  'org.eclipse.ajdt.ui.ajnature',
+	  	  'org.eclipse.ajdt.ui.ajnature',
 		  'org.eclipse.buildship.core.gradleprojectnature',
 		  'org.eclipse.wst.common.project.facet.core.nature',
 		  'org.eclipse.xtext.ui.shared.xtextNature',
-		  'org.eclipse.pde.PluginNature',
-		  'org.eclipse.viatra.query.projectnature'
+		  'org.eclipse.pde.PluginNature'
 	}
 }
 
@@ -40,10 +43,6 @@ eclipse {
 repositories {
 	mavenLocal()
 	mavenCentral()
-}
-
-task wrapper(type: Wrapper) {
-	gradleVersion = '4.6'
 }
 
 
@@ -66,6 +65,14 @@ sourceSets {
 			]
 		}
 	}
+	test {
+		java {
+			srcDirs = [
+				'src/test/java',
+				'src/test/xtend-gen'
+			]
+		}
+	}
 }
 
 
@@ -79,7 +86,10 @@ configurations {
 		extendsFrom aspects
 	}
 }
-  
+
+
+sourceCompatibility = 1.8
+
 compileJava {
   sourceCompatibility="1.8"
   targetCompatibility="1.8"
@@ -87,18 +97,20 @@ compileJava {
   doLast{
 	  ant.taskdef( resource:"org/aspectj/tools/ant/taskdefs/aspectjTaskdefs.properties", classpath: configurations.ajc.asPath )
 	  ant.iajc(
-		  source:"1.8", 
-		  target:"1.8", 
+		  source:sourceCompatibility, 
+		  target:targetCompatibility, 
 		  destDir: sourceSets.main.output.classesDir.absolutePath, 
-		  inpath: configurations.ajInpath.asPath,
+		  inpath: configurations.ajInpath?.asPath,
 		  maxmem: "512m", 
 		  fork: "true",
-		  aspectPath:configurations.aspects.asPath,  
+		  aspectPath:configurations.aspects?.asPath,  
 		  sourceRootCopyFilter:"**/.git/*,**/*.java",
-		  classpath:"${configurations.compile.asPath};${configurations.aspectCompile.asPath}"){
+		  classpath:"${configurations.compile?.asPath};${configurations.aspectCompile?.asPath};${configurations.ajInpath?.asPath}"){
 		  sourceroots{
 			  sourceSets.main.java.srcDirs.each{
-				  pathelement(location:it.absolutePath)
+				if (it.exists()) {
+					pathelement(location:it.absolutePath)
+				}
 			  }
 		  }
 	  }
@@ -106,11 +118,13 @@ compileJava {
 }
 
 dependencies {
-	compile "yamtl:yamtl:0.0.2-SNAPSHOT"
+//	compile "yamtl:yamtl:0.0.2-SNAPSHOT"
 	compile "com.google.guava:guava-testlib:24.1-jre"
-	compile "org.eclipse.xtend:org.eclipse.xtend.lib:2.13.0" 
+	compile "org.eclipse.xtend:org.eclipse.xtend.lib:$xtendVersion" 
+	// for using @Accessors
+	compile "org.eclipse.xtend:org.eclipse.xtend.lib.macro:$xtendVersion"
 	compile 'org.eclipse.emf:org.eclipse.emf.ecore.change:2.11+'
-//    compile files('lib/yamtl-all-0.0.1-SNAPSHOT.jar')
+    compile files('lib/yamtl-all-0.0.2-SNAPSHOT.jar')
 	
 	// AspectJ
 	ajc "org.aspectj:aspectjtools:1.9.1"
@@ -119,6 +133,5 @@ dependencies {
 	aspects "yamtl:yamtl:0.0.2-SNAPSHOT"
 	ajInpath "yamtl:yamtl:0.0.2-SNAPSHOT"
 }
-
 
 

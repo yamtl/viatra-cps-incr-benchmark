@@ -30,7 +30,7 @@ class Cps2DepRunner_ClientServer_YAMTL_modification extends BenchmarkRunner {
 	override getIterations() {
 		#[1, 1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
 //		#[1, 1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
-//		#[1, 8]
+//		#[1]
 	}
     
 	def static void main(String[] args) {
@@ -48,6 +48,7 @@ class Cps2DepRunner_ClientServer_YAMTL_modification extends BenchmarkRunner {
 		var String inputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/clientServer/cps/clientServer_«iteration».cyberphysicalsystem.xmi'''
 
 		xform = new Cps2DepYAMTL
+//		xform.debug = true
 		xform.fromRoots = false
 		xform.extentTypeModifier = ExtentTypeModifier.LIST
 		xform.executionMode = ExecutionMode.INCREMENTAL

@@ -1,0 +1,11 @@
+<aspectj>
+    <aspects>
+        <!-- aspect name="eu.ibacz.pbns.util.aspect.TimingAspect"/--> <!--  fails if not found -->
+        <aspect name="cps2dep.yamtl.FeatureCallAspect"/>
+    </aspects>
+    <weaver options="-verbose -showWeaveInfo"> <!-- add -debug to print every class [not] woven  -->
+        <include within="yamtl..*"/> <!-- Notice the 2 dots to include also subpackages -->
+        <include within="cps2dep..*"/> <!-- Notice the 2 dots to include also subpackages -->
+        <include within="org.eclipse.viatra..*"/> <!-- Notice the 2 dots to include also subpackages -->
+    </weaver>    
+</aspectj>
