@@ -2,14 +2,15 @@ package experiments.yamtl
 
 import cps2dep.yamtl.Cps2DepYAMTL
 import experiments.utils.FullBenchmarkRunner
-import java.sql.Timestamp
 import java.util.List
+import java.util.Map
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.CyberPhysicalSystem
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.CyberPhysicalSystemPackage
 import org.eclipse.viatra.examples.cps.deployment.DeploymentPackage
+import org.eclipse.viatra.examples.cps.generator.utils.CPSModelBuilderUtil
 import org.eclipse.viatra.examples.cps.traceability.TraceabilityFactory
 import org.eclipse.viatra.examples.cps.traceability.TraceabilityPackage
 import yamtl.core.YAMTLModule.ExecutionMode
@@ -21,7 +22,9 @@ class Cps2DepRunner_ClientServer_YAMTL_modification_full extends FullBenchmarkRu
 	var List<EObject> rootObjects 
 	var String iteration
     
-    val ROOT_PATH = '/Users/ab373/Documents/ArturData/WORK/git/viatra-cps-batch-benchmark'
+    extension CPSModelBuilderUtil builderUtil = new CPSModelBuilderUtil
+     
+    val ROOT_PATH = '..'
     
 	override getIdentifier() {
 		"cps2dep_clientServer_yamtl_incr_modification"
@@ -47,8 +50,8 @@ class Cps2DepRunner_ClientServer_YAMTL_modification_full extends FullBenchmarkRu
 		
 		doStandaloneEMFSetup()
 		
-		var String inputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/clientServer/cps/clientServer_«iteration».cyberphysicalsystem.xmi'''
-		
+		var String inputModelPath = '''«ROOT_PATH»/../viatra-cps-batch-benchmark/m2m.batch.data/cps2dep/clientServer/cps/clientServer_«iteration».cyberphysicalsystem.xmi'''
+
 		xform = new Cps2DepYAMTL
 		xform.fromRoots = false
 		xform.extentTypeModifier = ExtentTypeModifier.LIST
@@ -63,8 +66,21 @@ class Cps2DepRunner_ClientServer_YAMTL_modification_full extends FullBenchmarkRu
 			it.cps = cpsRes.contents.head as CyberPhysicalSystem
 		]
 		
-		var String forwardDeltaPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/clientServer/cps/clientServer_«iteration».cyberphysicalsystem.delta.xmi'''
-		xform.loadDelta('cps', 'update', forwardDeltaPath, new Timestamp(System.nanoTime()))
+//		var String forwardDeltaPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/clientServer/cps/clientServer_«iteration».cyberphysicalsystem.delta.xmi'''
+//		xform.loadDelta('cps', 'update', forwardDeltaPath, new Timestamp(System.nanoTime()))
+
+		// The change is performed and recorded
+		// then reversed and the change undone.
+		xform.recordSourceDelta('cps', 'update', [
+			val Map<String,EObject> result = newHashMap
+			
+			val appType = xform.mapping.cps.appTypes.findFirst[it.identifier.contains("Client")]
+			val hostInstance = xform.mapping.cps.hostTypes.findFirst[it.identifier.contains("client")].instances.head
+			val appID = "new.app.instance" + "_NEW" // nextModificationIndex 
+			appType.prepareApplicationInstanceWithId(appID, hostInstance)
+			
+			result
+		])
 	}
 	
 	override doInitialization() {
@@ -73,6 +89,7 @@ class Cps2DepRunner_ClientServer_YAMTL_modification_full extends FullBenchmarkRu
 	}
 	
 	override doTransformation() {
+		// applies the source change and propagates it
 		xform.propagateDelta('cps', 'update')
 	}
 	
