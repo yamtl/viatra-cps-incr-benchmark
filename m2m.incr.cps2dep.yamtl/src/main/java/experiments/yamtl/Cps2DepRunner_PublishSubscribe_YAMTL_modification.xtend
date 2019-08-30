@@ -7,8 +7,10 @@ import java.util.Map
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl
+import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.ApplicationType
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.CyberPhysicalSystem
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.CyberPhysicalSystemPackage
+import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.HostInstance
 import org.eclipse.viatra.examples.cps.deployment.DeploymentPackage
 import org.eclipse.viatra.examples.cps.generator.utils.CPSModelBuilderUtil
 import org.eclipse.viatra.examples.cps.traceability.TraceabilityFactory
@@ -16,31 +18,33 @@ import org.eclipse.viatra.examples.cps.traceability.TraceabilityPackage
 import yamtl.core.YAMTLModule.ExecutionMode
 import yamtl.core.YAMTLModule.ExtentTypeModifier
 
-class Cps2DepRunner_ClientServer_YAMTL_modification extends BenchmarkRunner {
+class Cps2DepRunner_PublishSubscribe_YAMTL_modification extends BenchmarkRunner {
 
-
-    val trafo = 'clientServer'
+    val trafo = 'publishSubscribe'
     val ROOT_PATH = '/Users/ab373/Documents/ArturData/WORK/git/viatra-cps-batch-benchmark'
 
 	var Cps2DepYAMTL xform 
 	var List<EObject> rootObjects 
     extension CPSModelBuilderUtil builderUtil = new CPSModelBuilderUtil
     
-    
+
 	override getIdentifier() {
 		'''cps2dep_«trafo»_yamtl_incr_modification'''
 	}
 	
 	override getIterations() {
 		#[1, 1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
+//		#[1, 1, 8, 16, 32, 64, 128, 256, 512, 1024]
+//		#[8]
 	}
     
 	def static void main(String[] args) {
 		
-		val runner = new Cps2DepRunner_ClientServer_YAMTL_modification
+		val runner = new Cps2DepRunner_PublishSubscribe_YAMTL_modification
 		runner.runBenchmark
 	
 	} 
+
 
 	override doLoad(String iteration) {
 		doStandaloneEMFSetup()
@@ -48,7 +52,7 @@ class Cps2DepRunner_ClientServer_YAMTL_modification extends BenchmarkRunner {
 		var String inputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/«trafo»/cps/«trafo»_«iteration».cyberphysicalsystem.xmi'''
 
 		xform = new Cps2DepYAMTL
-		//xform.debug = true
+		// xform.debug = true
 		xform.fromRoots = false
 		xform.extentTypeModifier = ExtentTypeModifier.LIST
 		xform.executionMode = ExecutionMode.INCREMENTAL
@@ -75,6 +79,12 @@ class Cps2DepRunner_ClientServer_YAMTL_modification extends BenchmarkRunner {
 			val appID = "new.app.instance" + "_NEW" // nextModificationIndex 
 			appType.prepareApplicationInstanceWithId(appID, hostInstance)
 			
+			if (xform.debug) {
+				println('''recordSourceDelta''')
+				for (i : appType.instances) {
+					println('''identifier «i.identifier» - allocatedTo «i.allocatedTo»''')
+				}
+			}
 			result
 		])
 	}
@@ -85,20 +95,26 @@ class Cps2DepRunner_ClientServer_YAMTL_modification extends BenchmarkRunner {
 	}
 	
 	override doTransformation() {
+		// apply change if not applied with delta
+//		if (!xform.applySourceDelta) {
+//			val appID = "new.app.instance" + "_NEW" // nextModificationIndex 
+//			appType.prepareApplicationInstanceWithId(appID, hostInstance)
+//		}
 		// applies the source change and propagates it
 		xform.propagateDelta('cps', 'update')
 	}
 	
 	override doSave(String iteration) {
-		var String outputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/«trafo»/deployment/yamtl/modification/«trafo»_«iteration».deployment.modification.xmi'''
-		xform.saveOutputModels(#{'dep' -> outputModelPath})
-		
-		var String outputTraceModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/«trafo»/deployment/yamtl/modification/«trafo»_«iteration».traceability.modification.xmi'''
-		println("save traceability: " + outputTraceModelPath)
-		xform.saveTraceModel(outputTraceModelPath)
+//		var String outputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/«trafo»/deployment/yamtl/modification/«trafo»_«iteration».deployment.modification.xmi'''
+//		xform.saveOutputModels(#{'dep' -> outputModelPath})
+//		
+//		var String outputTraceModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/«trafo»/deployment/yamtl/modification/«trafo»_«iteration».traceability.modification.xmi'''
+//		println("save traceability: " + outputTraceModelPath)
+//		xform.saveTraceModel(outputTraceModelPath)
 	}
 	
 	override doDispose() {
+		println(xform.toStringStats)
 		xform = null
 		rootObjects = null
 	}

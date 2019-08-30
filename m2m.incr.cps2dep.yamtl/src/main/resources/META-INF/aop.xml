@@ -1,10 +1,12 @@
 <aspectj>
     <aspects>
         <aspect name="cps2dep.yamtl.FeatureCallAspect"/>
+        <aspect name="yamtl.core.InitLocations"/>
     </aspects>
     <weaver options="-verbose -showWeaveInfo"> <!-- add -debug to print every class [not] woven  -->
         <include within="yamtl..*"/> <!-- Notice the 2 dots to include also subpackages -->
         <include within="cps2dep..*"/> <!-- Notice the 2 dots to include also subpackages -->
         <include within="org.eclipse.viatra..*"/> <!-- Notice the 2 dots to include also subpackages -->
+        <include within="org.eclipse.emf.ecore..*"/> <!-- Notice the 2 dots to include also subpackages -->
     </weaver>    
 </aspectj>

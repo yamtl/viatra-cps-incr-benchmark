@@ -4,6 +4,7 @@ import java.util.ArrayList
 import java.util.List
 import java.util.Map
 import java.util.Set
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.ApplicationInstance
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.ApplicationType
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.CyberPhysicalSystem
@@ -28,6 +29,7 @@ import yamtl.core.MatchMap
 import yamtl.core.YAMTLModule
 import yamtl.dsl.Helper
 import yamtl.dsl.Rule
+import yamtl.utils.FetchUtil
 
 class Cps2DepYAMTL extends YAMTLModule {
 	
@@ -490,6 +492,46 @@ class Cps2DepYAMTL extends YAMTLModule {
 		}
 	}
 
+
+//	def List<MatchMap> getTrafoStepList() {
+//		val list = newArrayList
+//		
+//		var  Map<EObject,Map<String,List<MatchMap>>>  matchPool
+//		if (this.executionMode == ExecutionMode.PROPAGATION)
+//			matchPool = this.engine.deltaMatchPool
+//		else 
+//			matchPool = this.engine.matchPool
+//		
+//		for (sourceObjectEntry : matchPool.entrySet) {
+//			for (ruleNameEntry : sourceObjectEntry.value.entrySet) {
+//				for (redux : ruleNameEntry.value) {
+//					if ((!redux.dirty) && (!redux.rule.transient))
+//						list.add(redux)
+//				}
+//			}
+//		}	
+//		for (sourceObjectEntry : engine.lazyMatchPool.entrySet) {
+//			for (ruleNameEntry : sourceObjectEntry.value.entrySet) {
+//				for (redux : ruleNameEntry.value) {
+//					if ((!redux.dirty) && (!redux.rule.transient)) {
+//						list.add(redux)
+//					
+//						val uniqueLazyMatchPool = redux.frame.store.get(FetchUtil.UNIQUE_LAZY_MATCH_POOL) as Map<EObject,Map<String,List<MatchMap>>>
+//						for (sourceObjectEntry2 : uniqueLazyMatchPool.entrySet) {
+//							for (ruleNameEntry2 : sourceObjectEntry2.value.entrySet) {
+//								for (redux2 : ruleNameEntry2.value) {
+//									if ((!redux2.dirty) && (!redux2.rule.transient))
+//										list.add(redux2)
+//								}
+//							}
+//						}
+//						
+//					}
+//				}
+//			}
+//		}
+//		return list
+//	}
 
 	def void processTrafoStep(CPSToDeployment cps2dep, MatchMap redux, Set<String> visitedStateMachineIds, Set<String> visitedStateIds, Set<String> visitedTransitionIds) {
 		if (!CyberPhysicalSystem.isInstance(redux.defaultInObject)) {

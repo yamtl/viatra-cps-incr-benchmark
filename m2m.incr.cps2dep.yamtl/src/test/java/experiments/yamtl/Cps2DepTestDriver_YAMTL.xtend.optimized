@@ -1,6 +1,6 @@
 package experiments.yamtl
 
-import cps2dep.yamtl.Cps2DepYAMTL
+import cps2dep.yamtl.Cps2DepYAMTL_optimized
 import java.util.Map
 import org.apache.log4j.Logger
 import org.eclipse.emf.ecore.EObject
@@ -14,13 +14,15 @@ class Cps2DepTestDriver_YAMTL {
 	protected extension Logger logger = Logger.getLogger("Cps2DepTestDriver_YAMTL")
 	
 	@Accessors
-	var Cps2DepYAMTL xform 
+//	var Cps2DepYAMTL xform 
+	var Cps2DepYAMTL_optimized xform 
 	
 	def initializeTransformation(CPSToDeployment cps2dep) {
 		if ((cps2dep.cps === null) || (cps2dep.deployment === null)) 
 			throw new IllegalArgumentException()
 		
-		xform = new Cps2DepYAMTL
+//		xform = new Cps2DepYAMTL
+		xform = new Cps2DepYAMTL_optimized
 		xform.debug=true
 		xform.fromRoots = false
 		xform.extentTypeModifier = ExtentTypeModifier.LIST

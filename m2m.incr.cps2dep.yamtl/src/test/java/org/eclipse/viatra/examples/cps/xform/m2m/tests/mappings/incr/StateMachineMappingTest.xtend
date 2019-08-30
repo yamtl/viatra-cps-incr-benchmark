@@ -20,7 +20,6 @@ import org.eclipse.viatra.examples.cps.generator.utils.CPSModelBuilderUtil
 import org.eclipse.viatra.examples.cps.traceability.CPSToDeployment
 import org.eclipse.viatra.examples.cps.xform.m2m.tests.CPS2DepTest
 import org.junit.Test
-import yamtl.utils.EmfPrettyPrinter
 
 import static org.junit.Assert.*
 

@@ -18,29 +18,26 @@ import yamtl.core.YAMTLModule.ExtentTypeModifier
 
 class Cps2DepRunner_ClientServer_YAMTL_modification_full extends FullBenchmarkRunner {
 
+    val trafo = 'clientServer'
+    val ROOT_PATH = '/Users/ab373/Documents/ArturData/WORK/git/viatra-cps-batch-benchmark'
+
 	var Cps2DepYAMTL xform 
 	var List<EObject> rootObjects 
 	var String iteration
     
     extension CPSModelBuilderUtil builderUtil = new CPSModelBuilderUtil
      
-    val ROOT_PATH = '..'
-    
 	override getIdentifier() {
-		"cps2dep_clientServer_yamtl_incr_modification"
+		'''cps2dep_«trafo»_yamtl_incr_modification'''
 	}
 	
 	override getIterations() {
 		#[1, 1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
-//		#[1, 1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
-//		#[1]
 	}
     
 	def static void main(String[] args) {
 		val runner = new Cps2DepRunner_ClientServer_YAMTL_modification_full
-//		runner.debug = true
 		runner.runBenchmark(10)
-	
 	} 
 
 	// in our case
@@ -50,12 +47,13 @@ class Cps2DepRunner_ClientServer_YAMTL_modification_full extends FullBenchmarkRu
 		
 		doStandaloneEMFSetup()
 		
-		var String inputModelPath = '''«ROOT_PATH»/../viatra-cps-batch-benchmark/m2m.batch.data/cps2dep/clientServer/cps/clientServer_«iteration».cyberphysicalsystem.xmi'''
+		var String inputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/«trafo»/cps/«trafo»_«iteration».cyberphysicalsystem.xmi'''
 
 		xform = new Cps2DepYAMTL
 		xform.fromRoots = false
 		xform.extentTypeModifier = ExtentTypeModifier.LIST
 		xform.executionMode = ExecutionMode.INCREMENTAL
+		xform.initLocationsWhenLoading = true
 		
 		// prepare models
 		// this will normally be outside the trafo declaration

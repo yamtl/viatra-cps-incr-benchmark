@@ -7,3 +7,5 @@ build
 xtend-gen
 src/main/xtend-gen
 *.csv
+/ajcore.*
+argfile*

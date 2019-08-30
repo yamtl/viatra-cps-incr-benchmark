@@ -16,14 +16,14 @@ import org.eclipse.viatra.examples.cps.traceability.TraceabilityPackage
 import yamtl.core.YAMTLModule.ExecutionMode
 import yamtl.core.YAMTLModule.ExtentTypeModifier
 
-class Cps2DepRunner_ClientServer_YAMTL_modification extends BenchmarkRunner {
+class Cps2DepRunner_Statistics_YAMTL_modification extends BenchmarkRunner {
 
-
-    val trafo = 'clientServer'
-    val ROOT_PATH = '/Users/ab373/Documents/ArturData/WORK/git/viatra-cps-batch-benchmark'
-
+	var trafo = 'statistics'
+	val ROOT_PATH = '/Users/ab373/Documents/ArturData/WORK/git/viatra-cps-batch-benchmark'
+	
 	var Cps2DepYAMTL xform 
 	var List<EObject> rootObjects 
+	var String iteration
     extension CPSModelBuilderUtil builderUtil = new CPSModelBuilderUtil
     
     
@@ -32,23 +32,25 @@ class Cps2DepRunner_ClientServer_YAMTL_modification extends BenchmarkRunner {
 	}
 	
 	override getIterations() {
-		#[1, 1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
+		#[1, 1, 2, 4, 8, 16, 32, 64]
+//		#[1]
 	}
     
 	def static void main(String[] args) {
-		
-		val runner = new Cps2DepRunner_ClientServer_YAMTL_modification
-		runner.runBenchmark
-	
+		val runner = new Cps2DepRunner_Statistics_YAMTL_modification
+		runner.runBenchmark	
 	} 
 
+	// in our case
+	// TODO: initialization should be performed before loading models	
 	override doLoad(String iteration) {
+		this.iteration = iteration
+		
 		doStandaloneEMFSetup()
 		
 		var String inputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/«trafo»/cps/«trafo»_«iteration».cyberphysicalsystem.xmi'''
-
+		
 		xform = new Cps2DepYAMTL
-		//xform.debug = true
 		xform.fromRoots = false
 		xform.extentTypeModifier = ExtentTypeModifier.LIST
 		xform.executionMode = ExecutionMode.INCREMENTAL
@@ -57,12 +59,13 @@ class Cps2DepRunner_ClientServer_YAMTL_modification extends BenchmarkRunner {
 		// prepare models
 		// this will normally be outside the trafo declaration
 		xform.loadInputModels(#{'cps' -> inputModelPath})
+		
 		val cpsRes = xform.getModelResource('cps')
 		xform.mapping = TraceabilityFactory.eINSTANCE.createCPSToDeployment => [
 			it.cps = cpsRes.contents.head as CyberPhysicalSystem
 		]
 		
-//		var String forwardDeltaPath = '''«ROOT_PATH»/../m2m.batch.data/cps2dep/clientServer/cps/clientServer_«iteration».cyberphysicalsystem.delta.xmi'''
+//		var String forwardDeltaPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/statistics/statistics_«iteration».cyberphysicalsystem.delta.xmi'''
 //		xform.loadDelta('cps', 'update', forwardDeltaPath, new Timestamp(System.nanoTime()))
 
 		// The change is performed and recorded
@@ -70,8 +73,8 @@ class Cps2DepRunner_ClientServer_YAMTL_modification extends BenchmarkRunner {
 		xform.recordSourceDelta('cps', 'update', [
 			val Map<String,EObject> result = newHashMap
 			
-			val appType = xform.mapping.cps.appTypes.findFirst[it.identifier.contains("Client")]
-			val hostInstance = xform.mapping.cps.hostTypes.findFirst[it.identifier.contains("client")].instances.head
+			val appType = xform.mapping.cps.appTypes.findFirst[it.identifier.contains("AC_withStateMachine")]
+			val hostInstance = xform.mapping.cps.hostTypes.findFirst[it.identifier.contains("HC_appContainer")].instances.head
 			val appID = "new.app.instance" + "_NEW" // nextModificationIndex 
 			appType.prepareApplicationInstanceWithId(appID, hostInstance)
 			

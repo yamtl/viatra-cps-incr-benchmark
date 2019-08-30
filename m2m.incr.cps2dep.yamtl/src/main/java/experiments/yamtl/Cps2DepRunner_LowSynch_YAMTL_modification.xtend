@@ -16,10 +16,10 @@ import org.eclipse.viatra.examples.cps.traceability.TraceabilityPackage
 import yamtl.core.YAMTLModule.ExecutionMode
 import yamtl.core.YAMTLModule.ExtentTypeModifier
 
-class Cps2DepRunner_ClientServer_YAMTL_modification extends BenchmarkRunner {
+class Cps2DepRunner_LowSynch_YAMTL_modification extends BenchmarkRunner {
 
 
-    val trafo = 'clientServer'
+    val trafo = 'lowSynch'
     val ROOT_PATH = '/Users/ab373/Documents/ArturData/WORK/git/viatra-cps-batch-benchmark'
 
 	var Cps2DepYAMTL xform 
@@ -32,12 +32,12 @@ class Cps2DepRunner_ClientServer_YAMTL_modification extends BenchmarkRunner {
 	}
 	
 	override getIterations() {
-		#[1, 1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
+		#[1, 1, 8, 16, 32, 64, 128, 256]
 	}
     
 	def static void main(String[] args) {
 		
-		val runner = new Cps2DepRunner_ClientServer_YAMTL_modification
+		val runner = new Cps2DepRunner_LowSynch_YAMTL_modification
 		runner.runBenchmark
 	
 	} 
@@ -48,7 +48,7 @@ class Cps2DepRunner_ClientServer_YAMTL_modification extends BenchmarkRunner {
 		var String inputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/«trafo»/cps/«trafo»_«iteration».cyberphysicalsystem.xmi'''
 
 		xform = new Cps2DepYAMTL
-		//xform.debug = true
+//		xform.debug = true
 		xform.fromRoots = false
 		xform.extentTypeModifier = ExtentTypeModifier.LIST
 		xform.executionMode = ExecutionMode.INCREMENTAL
@@ -70,8 +70,8 @@ class Cps2DepRunner_ClientServer_YAMTL_modification extends BenchmarkRunner {
 		xform.recordSourceDelta('cps', 'update', [
 			val Map<String,EObject> result = newHashMap
 			
-			val appType = xform.mapping.cps.appTypes.findFirst[it.identifier.contains("Client")]
-			val hostInstance = xform.mapping.cps.hostTypes.findFirst[it.identifier.contains("client")].instances.head
+			val appType = xform.mapping.cps.appTypes.findFirst[it.identifier.contains("AC")]
+			val hostInstance = xform.mapping.cps.hostTypes.findFirst[it.identifier.contains("HC")].instances.head
 			val appID = "new.app.instance" + "_NEW" // nextModificationIndex 
 			appType.prepareApplicationInstanceWithId(appID, hostInstance)
 			
@@ -90,12 +90,12 @@ class Cps2DepRunner_ClientServer_YAMTL_modification extends BenchmarkRunner {
 	}
 	
 	override doSave(String iteration) {
-		var String outputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/«trafo»/deployment/yamtl/modification/«trafo»_«iteration».deployment.modification.xmi'''
-		xform.saveOutputModels(#{'dep' -> outputModelPath})
-		
-		var String outputTraceModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/«trafo»/deployment/yamtl/modification/«trafo»_«iteration».traceability.modification.xmi'''
-		println("save traceability: " + outputTraceModelPath)
-		xform.saveTraceModel(outputTraceModelPath)
+//		var String outputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/«trafo»/deployment/yamtl/modification/«trafo»_«iteration».deployment.modification.xmi'''
+//		xform.saveOutputModels(#{'dep' -> outputModelPath})
+//		
+//		var String outputTraceModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/«trafo»/deployment/yamtl/modification/«trafo»_«iteration».traceability.modification.xmi'''
+//		println("save traceability: " + outputTraceModelPath)
+//		xform.saveTraceModel(outputTraceModelPath)
 	}
 	
 	override doDispose() {

@@ -29,7 +29,7 @@ import yamtl.core.YAMTLModule
 import yamtl.dsl.Helper
 import yamtl.dsl.Rule
 
-class Cps2DepYAMTL extends YAMTLModule {
+class Cps2DepYAMTL_optimized extends YAMTLModule {
 	
 	@Accessors
 	CPSToDeployment mapping;
@@ -37,6 +37,17 @@ class Cps2DepYAMTL extends YAMTLModule {
 	val CPS = CyberPhysicalSystemPackage.eINSTANCE  
 	val DEP = DeploymentPackage.eINSTANCE  
 	
+	val Map<String,List<Transition>> addWaitTransitionMap = newHashMap
+	val Map<String,List<Transition>> updatedSendTransitionMap = newHashMap
+	def put(Map<String,List<Transition>> map, String signalId, Transition transition) {
+		val list = map.get(signalId)
+		if (list===null) {
+			map.put(signalId, newArrayList(transition))
+		} else {
+			list.add(transition)
+		}
+	}
+
 
 	/**
 	 * Creates a new transformation instance. The input cyber physical system model is given in the mapping
@@ -285,10 +296,14 @@ class Cps2DepYAMTL extends YAMTLModule {
 						trackTransition(transition,out)
 						
 						// explicit dependency
-						if (transition.action?.isSignal)
+						if (transition.action?.isSignal) {
 							this.insertDependency('Transition_2_BehaviorTransition_Trigger', transition)
-						else {
+							if (this.executionMode == ExecutionMode.PROPAGATION)
+								updatedSendTransitionMap.put(transition.action?.signalId, transition)
+						} else {
 							val signalId = transition.action?.waitTransitionSignalId
+							if (this.executionMode == ExecutionMode.PROPAGATION)
+								addWaitTransitionMap.put(transition.action?.waitTransitionSignalId, transition)
 							if (signalId !== null) {
 								val sendingTransitionMap = 'sendingTransitions'.fetch as Map<String,Map<String,List<Transition>>> 
 								val sendingTransitionAppTypeIdMap = sendingTransitionMap.get(signalId)
@@ -319,59 +334,74 @@ class Cps2DepYAMTL extends YAMTLModule {
 					[ 
 						val transition = 'transition'.fetch as Transition
 						
+						// optimized version: assuming additive updates only
 						// initialize triggers for the corresponding DEP transitions
-						transitionToBTransitionList.get(transition)?.forEach[it.trigger.clear()]										
+						// transitionToBTransitionList.get(transition)?.forEach[it.trigger.clear()]										
 						
-						val waitingTransitions = 'waitingTransitions'.fetch as Map<String,Map<String,List<Transition>>> 
-						val waitingTransitionsAppTypeIdMap = waitingTransitions.get(transition.action.signalId)
-						if (waitingTransitionsAppTypeIdMap !== null) {
-							val waitingTransitionsList = waitingTransitionsAppTypeIdMap.get(transition.action.appTypeId)
-						
-							// triggers have to be processed at the end
-							// because we need to access generated behaviorTransitions 
-							// (in case several behaviors were obtained from the same state machine)
-							if (waitingTransitionsList!==null) {
-								for (triggeredTransition: waitingTransitionsList) {
-									if (triggeredTransition.belongsToApplicationType(transition.action.appTypeId)) {
+						var List<Transition> waitingTransitionsList
+						if (this.executionMode == ExecutionMode.PROPAGATION) {
+							val updatedSendTransitions = updatedSendTransitionMap.get(transition.action.signalId)
+							if ((updatedSendTransitions === null) || (!updatedSendTransitions.contains(transition))) {
+								// send transition is not new, update with new wait transitions only
+								waitingTransitionsList = addWaitTransitionMap.get(transition.action.signalId)
+							} else {
+								// new send transition, whose trigger needs to be updated with all wait transition
+								val waitingTransitions = 'waitingTransitions'.fetch as Map<String,Map<String,List<Transition>>> 
+							val waitingTransitionsAppTypeIdMap = waitingTransitions.get(transition.action.signalId)
+							if (waitingTransitionsAppTypeIdMap !== null) 
+								waitingTransitionsList = waitingTransitionsAppTypeIdMap.get(transition.action.appTypeId) 								
+							}
+						} else {
+							val waitingTransitions = 'waitingTransitions'.fetch as Map<String,Map<String,List<Transition>>> 
+							val waitingTransitionsAppTypeIdMap = waitingTransitions.get(transition.action.signalId)
+							if (waitingTransitionsAppTypeIdMap !== null) 
+								waitingTransitionsList = waitingTransitionsAppTypeIdMap.get(transition.action.appTypeId) 
+						}				
+						// triggers have to be processed at the end
+						// because we need to access generated behaviorTransitions 
+						// (in case several behaviors were obtained from the same state machine)
+						if (waitingTransitionsList!==null) {
+							for (triggeredTransition: waitingTransitionsList) {
+								if (triggeredTransition.belongsToApplicationType(transition.action.appTypeId)) {
+								
+									val list = transitionToBTransitionList.get(transition)
 									
-										val list = transitionToBTransitionList.get(transition)
-										
-										if (list!==null) {
-											list.forEach[ senderBehaviorTransition |
+									if (list!==null) {
+										list.forEach[ senderBehaviorTransition |
+											
+											val bTransitionList = transitionToBTransitionList.get(triggeredTransition)
+			
+											if (bTransitionList !== null) {
 												
-												val bTransitionList = transitionToBTransitionList.get(triggeredTransition)
+												val reachableTransitionList = newArrayList
 				
-												if (bTransitionList !== null) {
+												for (receiverBehaviorTransition: bTransitionList) {
+													val senderDepApp = senderBehaviorTransition.eContainer.eContainer as DeploymentApplication
+													val senderAppIntance = depAppToAppInstance.get(senderDepApp)
 													
-													val reachableTransitionList = newArrayList
-					
-													for (receiverBehaviorTransition: bTransitionList) {
-														val senderDepApp = senderBehaviorTransition.eContainer.eContainer as DeploymentApplication
-														val senderAppIntance = depAppToAppInstance.get(senderDepApp)
-														
-														val receiverDepApp = receiverBehaviorTransition.eContainer.eContainer as DeploymentApplication
-														val receiverAppIntance = depAppToAppInstance.get(receiverDepApp)
-														
-														if (senderAppIntance.reaches(receiverAppIntance)) {
-															reachableTransitionList.add(receiverBehaviorTransition)
-														}
+													val receiverDepApp = receiverBehaviorTransition.eContainer.eContainer as DeploymentApplication
+													val receiverAppIntance = depAppToAppInstance.get(receiverDepApp)
+													
+													if (senderAppIntance.reaches(receiverAppIntance)) {
+														reachableTransitionList.add(receiverBehaviorTransition)
 													}
-					
-													senderBehaviorTransition.trigger +=  reachableTransitionList
 												}
-											]
-										}
+				
+												senderBehaviorTransition.trigger +=  reachableTransitionList
+													
+											}
+										]
 									}
 								}
-							}	
-						
-						}
+							}
+						}	
 						
 					]
 				).build
 			.build
 		])
 		
+		if (debug) println("constructor")
 	}
 	
 	
@@ -490,7 +520,6 @@ class Cps2DepYAMTL extends YAMTLModule {
 		}
 	}
 
-
 	def void processTrafoStep(CPSToDeployment cps2dep, MatchMap redux, Set<String> visitedStateMachineIds, Set<String> visitedStateIds, Set<String> visitedTransitionIds) {
 		if (!CyberPhysicalSystem.isInstance(redux.defaultInObject)) {
 			val sourceObject = redux.defaultInObject
@@ -566,15 +595,6 @@ class Cps2DepYAMTL extends YAMTLModule {
 			]
 		}
 		
-	}
-	
-	def put(Map<String,List<Transition>> map, String signalId, Transition transition) {
-		val list = map.get(signalId)
-		if (list===null) {
-			map.put(signalId, newArrayList(transition))
-		} else {
-			list.add(transition)
-		}
 	}
 }
 

@@ -1,16 +1,21 @@
 plugins {
-	id "org.xtext.xtend" version "1.0.21" // 24-01-2018
+	id "org.xtext.xtend" version "2.0.7"
 }
 
 group 'arturboronat'
-version '0.0.1-SNAPSHOT'
+version '0.0.5-SNAPSHOT'
 
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'application'
 
+//mainClassName = "experiments.yamtl.Cps2DepRunner_ClientServer_YAMTL_batch_full"
+//mainClassName = "experiments.yamtl.Cps2DepRunner_PublishSubscribe_YAMTL_batch_full"
+//mainClassName = "experiments.yamtl.Cps2DepRunner_LowSynch_YAMTL_batch_full"
+//mainClassName = "experiments.yamtl.Cps2DepRunner_SimpleScaling_YAMTL_batch_full"
+//mainClassName = "experiments.yamtl.Cps2DepRunner_Statistics_YAMTL_batch_full"
 
-sourceCompatibility = 1.8
+sourceCompatibility = 1.11
 
 eclipse {
 	project {
@@ -27,6 +32,9 @@ eclipse {
 	}
 }
 
+ext {
+	xtendVersion = '2.18.0'
+}
 
 repositories {
 	mavenLocal()
@@ -64,12 +72,34 @@ sourceSets {
 
 
 dependencies {
-//	compile "yamtl:yamtl:0.0.2-SNAPSHOT"
+	// yamtl imported
+	compile "yamtl:yamtl:${version}"
+	compile "org.eclipse.xtend:org.eclipse.xtend.lib:$xtendVersion"
+	compile "org.eclipse.xtext:org.eclipse.xtext.util:$xtendVersion"
+	
+	compile "arturboronat:m2m.batch.base:0.0.1-SNAPSHOT"
 	compile "com.google.guava:guava-testlib:24.1-jre"
-	compile "org.eclipse.xtend:org.eclipse.xtend.lib:2.14.0" 
+	// for using @Accessors
+	compile 'org.eclipse.emf:org.eclipse.emf.ecore.xmi:2.15.0' 
 	compile 'org.eclipse.emf:org.eclipse.emf.ecore.change:2.11+'
-    compile files('lib/yamtl-all-0.0.2-SNAPSHOT.jar')
+	compile "com.google.guava:guava-testlib:24.1-jre"
 }
 
 
 
+// create a single Jar with all dependencies
+// source: https://www.mkyong.com/gradle/gradle-create-a-jar-file-with-dependencies/
+task fatJar(type: Jar) {
+	manifest {
+		attributes 'LoadFmaModelAsXmi': 'Standalone FMA filter for EMF',
+			'Implementation-Version': version,
+			'Main-Class': mainClassName
+	}
+	// remove signatures as we are not signing this jar to avoid security warnings
+	exclude 'META-INF/*.RSA', 'META-INF/*.SF','META-INF/*.DSA'
+	baseName = project.name + '-all-' + mainClassName 
+	from { 
+		configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } 
+	} 
+	with jar
+}
