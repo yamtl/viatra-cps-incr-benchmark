@@ -7,7 +7,7 @@ This transformation can also be run in batch mode as shown in [this project](htt
 The most relevant files are the following:
 
 * [Transformation definition](./src/main/java/cps2dep/yamtl/Cps2DepYAMTL.xtend)
-* [Runners for the various scenarios](./src/main/java/experiments/yamtl/)
+* [Runners for the various cases](./src/main/java/experiments/yamtl/), for example:
     * `Cps2DepRunner_SCENARIO_YAMTL`: runs one single experiment for models of different sizes of `SCENARIO`
     * `Cps2DepRunner_SCENARIO_YAMTL_full`: runs several experiments for models of different sizes of `SCENARIO`
 * [Test cases](./src/test/java/): more information on these test cases can be found in the following section.
@@ -21,7 +21,7 @@ The most relevant files are the following:
 
 To run the benchmark:
 1. Select the corresponding runner in the Gradle build file, by setting `mainClassName`.
-2. Run the command `./gradlew clean run` .
+2. Run the command `./gradlew -PmainClass=experiments.yamtl.Cps2DepRunner_ClientServer_YAMTL_modification_full clean run`, and change the main class as desired.
 
 ## Running in batch mode
 
