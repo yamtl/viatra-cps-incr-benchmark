@@ -4,7 +4,6 @@ import java.util.ArrayList
 import java.util.List
 import java.util.Map
 import java.util.Set
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.ApplicationInstance
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.ApplicationType
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.CyberPhysicalSystem
@@ -29,7 +28,6 @@ import yamtl.core.MatchMap
 import yamtl.core.YAMTLModule
 import yamtl.dsl.Helper
 import yamtl.dsl.Rule
-import yamtl.utils.FetchUtil
 
 class Cps2DepYAMTL extends YAMTLModule {
 	
@@ -50,19 +48,19 @@ class Cps2DepYAMTL extends YAMTLModule {
 				
 		helperStore( #[
 			new Helper('waitingTransitions') [
-				val Map<String,List<Transition>> reachableWaitForTransitionsMap = newHashMap	 
+				val Map<String,Map<String,List<Transition>>> reachableWaitForTransitionsMap = newHashMap
 				CPS.transition.allInstances.forEach[ transition |
 					val targetTransition = transition as Transition
 					
 					if (targetTransition.action?.isWaitSignal) {
 						val signalId = targetTransition.action.waitTransitionSignalId
-						val list = reachableWaitForTransitionsMap.get(signalId)
-						if (list === null) {
-							reachableWaitForTransitionsMap.put(signalId, newArrayList(targetTransition))
+						val map = reachableWaitForTransitionsMap.get(signalId)
+						if (map === null) {
+							reachableWaitForTransitionsMap.put(signalId, newHashMap( targetTransition.applicationType.identifier -> newArrayList(targetTransition)))
 						} else {
-							list.add(targetTransition)
+							map.put(targetTransition.applicationType.identifier, targetTransition)
 						}
-					} 
+					}  
 				]
 				
 				reachableWaitForTransitionsMap
@@ -70,17 +68,17 @@ class Cps2DepYAMTL extends YAMTLModule {
 			.build,
 
 			new Helper('sendingTransitions') [
-				val Map<String,List<Transition>> sendTransitionsMap = newHashMap	 
+				val Map<String,Map<String,List<Transition>>> sendTransitionsMap = newHashMap 
 				CPS.transition.allInstances.forEach[ transition |
 					val targetTransition = transition as Transition
 					
 					if (targetTransition.action?.isSignal) {
 						val signalId = targetTransition.action.signalId
-						val list = sendTransitionsMap.get(signalId)
-						if (list === null) {
-							sendTransitionsMap.put(signalId, newArrayList(targetTransition))
+						val map = sendTransitionsMap.get(signalId)
+						if (map === null) {
+							sendTransitionsMap.put(signalId, newHashMap( targetTransition.action.appTypeId -> newArrayList(targetTransition)))
 						} else {
-							list.add(targetTransition)
+							map.put(targetTransition.action.appTypeId, targetTransition)
 						}
 
 						// when a transition changes its action
@@ -198,11 +196,14 @@ class Cps2DepYAMTL extends YAMTLModule {
 										else {
 											val signalId = transition.action?.waitTransitionSignalId
 											if (signalId !== null) {
-												val sendingTransitionMap = 'sendingTransitions'.fetch as Map<String,List<Transition>> 
-												val sendingTransitionList = sendingTransitionMap.get(signalId)
-												if (sendingTransitionList !== null) {
-													for (sendingTransition : sendingTransitionList) {
-														this.insertDependency('Transition_2_BehaviorTransition_Trigger', sendingTransition)
+												val sendingTransitionMap = 'sendingTransitions'.fetch as Map<String,Map<String,List<Transition>>> 
+												val sendingTransitionAppTypeIdMap = sendingTransitionMap.get(signalId)
+												if (sendingTransitionAppTypeIdMap !== null) {
+													val sendingTransitionList = sendingTransitionAppTypeIdMap.get(transition.applicationType.identifier)
+													if (sendingTransitionList !== null) {
+														for (sendingTransition : sendingTransitionList) {
+															this.insertDependency('Transition_2_BehaviorTransition_Trigger', sendingTransition)
+														}
 													}
 												}
 											}
@@ -289,11 +290,14 @@ class Cps2DepYAMTL extends YAMTLModule {
 						else {
 							val signalId = transition.action?.waitTransitionSignalId
 							if (signalId !== null) {
-								val sendingTransitionMap = 'sendingTransitions'.fetch as Map<String,List<Transition>> 
-								val sendingTransitionList = sendingTransitionMap.get(signalId)
-								if (sendingTransitionList !== null) {
-									for (sendingTransition : sendingTransitionList) {
-										this.insertDependency('Transition_2_BehaviorTransition_Trigger', sendingTransition)
+								val sendingTransitionMap = 'sendingTransitions'.fetch as Map<String,Map<String,List<Transition>>> 
+								val sendingTransitionAppTypeIdMap = sendingTransitionMap.get(signalId)
+								if (sendingTransitionAppTypeIdMap !== null) {
+									val sendingTransitionList = sendingTransitionAppTypeIdMap.get(transition.applicationType.identifier)
+									if (sendingTransitionList !== null) {
+										for (sendingTransition : sendingTransitionList) {
+											this.insertDependency('Transition_2_BehaviorTransition_Trigger', sendingTransition)
+										}
 									}
 								}
 							}
@@ -318,53 +322,56 @@ class Cps2DepYAMTL extends YAMTLModule {
 						// initialize triggers for the corresponding DEP transitions
 						transitionToBTransitionList.get(transition)?.forEach[it.trigger.clear()]										
 						
-						val waitingTransitions = 'waitingTransitions'.fetch as Map<String,List<Transition>> 
-						val waitingTransitionsList = waitingTransitions.get(transition.action.signalId)
+						val waitingTransitions = 'waitingTransitions'.fetch as Map<String,Map<String,List<Transition>>> 
+						val waitingTransitionsAppTypeIdMap = waitingTransitions.get(transition.action.signalId)
+						if (waitingTransitionsAppTypeIdMap !== null) {
+							val waitingTransitionsList = waitingTransitionsAppTypeIdMap.get(transition.action.appTypeId)
 						
-						// triggers have to be processed at the end
-						// because we need to access generated behaviorTransitions 
-						// (in case several behaviors were obtained from the same state machine)
-						if (waitingTransitionsList!==null) {
-							for (triggeredTransition: waitingTransitionsList) {
-								if (triggeredTransition.belongsToApplicationType(transition.action.appTypeId)) {
-								
-									val list = transitionToBTransitionList.get(transition)
+							// triggers have to be processed at the end
+							// because we need to access generated behaviorTransitions 
+							// (in case several behaviors were obtained from the same state machine)
+							if (waitingTransitionsList!==null) {
+								for (triggeredTransition: waitingTransitionsList) {
+									if (triggeredTransition.belongsToApplicationType(transition.action.appTypeId)) {
 									
-									if (list!==null) {
-										list.forEach[ senderBehaviorTransition |
-											
-											val bTransitionList = transitionToBTransitionList.get(triggeredTransition)
-			
-											if (bTransitionList !== null) {
+										val list = transitionToBTransitionList.get(transition)
+										
+										if (list!==null) {
+											list.forEach[ senderBehaviorTransition |
 												
-												val reachableTransitionList = newArrayList
+												val bTransitionList = transitionToBTransitionList.get(triggeredTransition)
 				
-												for (receiverBehaviorTransition: bTransitionList) {
-													val senderDepApp = senderBehaviorTransition.eContainer.eContainer as DeploymentApplication
-													val senderAppIntance = depAppToAppInstance.get(senderDepApp)
+												if (bTransitionList !== null) {
 													
-													val receiverDepApp = receiverBehaviorTransition.eContainer.eContainer as DeploymentApplication
-													val receiverAppIntance = depAppToAppInstance.get(receiverDepApp)
-													
-													if (senderAppIntance.reaches(receiverAppIntance)) {
-														reachableTransitionList.add(receiverBehaviorTransition)
+													val reachableTransitionList = newArrayList
+					
+													for (receiverBehaviorTransition: bTransitionList) {
+														val senderDepApp = senderBehaviorTransition.eContainer.eContainer as DeploymentApplication
+														val senderAppIntance = depAppToAppInstance.get(senderDepApp)
+														
+														val receiverDepApp = receiverBehaviorTransition.eContainer.eContainer as DeploymentApplication
+														val receiverAppIntance = depAppToAppInstance.get(receiverDepApp)
+														
+														if (senderAppIntance.reaches(receiverAppIntance)) {
+															reachableTransitionList.add(receiverBehaviorTransition)
+														}
 													}
+					
+													senderBehaviorTransition.trigger +=  reachableTransitionList
 												}
-				
-												senderBehaviorTransition.trigger +=  reachableTransitionList
-											}
-										]
+											]
+										}
 									}
 								}
-							}
-						}	
+							}	
+						
+						}
 						
 					]
 				).build
 			.build
 		])
 		
-		if (debug) println("constructor")
 	}
 	
 	
@@ -484,45 +491,45 @@ class Cps2DepYAMTL extends YAMTLModule {
 	}
 
 
-	def List<MatchMap> getTrafoStepList() {
-		val list = newArrayList
-		
-		var  Map<EObject,Map<String,List<MatchMap>>>  matchPool
-		if (this.executionMode == ExecutionMode.PROPAGATION)
-			matchPool = this.engine.deltaMatchPool
-		else 
-			matchPool = this.engine.matchPool
-		
-		for (sourceObjectEntry : matchPool.entrySet) {
-			for (ruleNameEntry : sourceObjectEntry.value.entrySet) {
-				for (redux : ruleNameEntry.value) {
-					if ((!redux.dirty) && (!redux.rule.transient))
-						list.add(redux)
-				}
-			}
-		}	
-		for (sourceObjectEntry : engine.lazyMatchPool.entrySet) {
-			for (ruleNameEntry : sourceObjectEntry.value.entrySet) {
-				for (redux : ruleNameEntry.value) {
-					if ((!redux.dirty) && (!redux.rule.transient)) {
-						list.add(redux)
-					
-						val uniqueLazyMatchPool = redux.frame.store.get(FetchUtil.UNIQUE_LAZY_MATCH_POOL) as Map<EObject,Map<String,List<MatchMap>>>
-						for (sourceObjectEntry2 : uniqueLazyMatchPool.entrySet) {
-							for (ruleNameEntry2 : sourceObjectEntry2.value.entrySet) {
-								for (redux2 : ruleNameEntry2.value) {
-									if ((!redux2.dirty) && (!redux2.rule.transient))
-										list.add(redux2)
-								}
-							}
-						}
-						
-					}
-				}
-			}
-		}
-		return list
-	}
+//	def List<MatchMap> getTrafoStepList() {
+//		val list = newArrayList
+//		
+//		var  Map<EObject,Map<String,List<MatchMap>>>  matchPool
+//		if (this.executionMode == ExecutionMode.PROPAGATION)
+//			matchPool = this.engine.deltaMatchPool
+//		else 
+//			matchPool = this.engine.matchPool
+//		
+//		for (sourceObjectEntry : matchPool.entrySet) {
+//			for (ruleNameEntry : sourceObjectEntry.value.entrySet) {
+//				for (redux : ruleNameEntry.value) {
+//					if ((!redux.dirty) && (!redux.rule.transient))
+//						list.add(redux)
+//				}
+//			}
+//		}	
+//		for (sourceObjectEntry : engine.lazyMatchPool.entrySet) {
+//			for (ruleNameEntry : sourceObjectEntry.value.entrySet) {
+//				for (redux : ruleNameEntry.value) {
+//					if ((!redux.dirty) && (!redux.rule.transient)) {
+//						list.add(redux)
+//					
+//						val uniqueLazyMatchPool = redux.frame.store.get(FetchUtil.UNIQUE_LAZY_MATCH_POOL) as Map<EObject,Map<String,List<MatchMap>>>
+//						for (sourceObjectEntry2 : uniqueLazyMatchPool.entrySet) {
+//							for (ruleNameEntry2 : sourceObjectEntry2.value.entrySet) {
+//								for (redux2 : ruleNameEntry2.value) {
+//									if ((!redux2.dirty) && (!redux2.rule.transient))
+//										list.add(redux2)
+//								}
+//							}
+//						}
+//						
+//					}
+//				}
+//			}
+//		}
+//		return list
+//	}
 
 	def void processTrafoStep(CPSToDeployment cps2dep, MatchMap redux, Set<String> visitedStateMachineIds, Set<String> visitedStateIds, Set<String> visitedTransitionIds) {
 		if (!CyberPhysicalSystem.isInstance(redux.defaultInObject)) {
@@ -599,6 +606,15 @@ class Cps2DepYAMTL extends YAMTLModule {
 			]
 		}
 		
+	}
+	
+	def put(Map<String,List<Transition>> map, String signalId, Transition transition) {
+		val list = map.get(signalId)
+		if (list===null) {
+			map.put(signalId, newArrayList(transition))
+		} else {
+			list.add(transition)
+		}
 	}
 }
 

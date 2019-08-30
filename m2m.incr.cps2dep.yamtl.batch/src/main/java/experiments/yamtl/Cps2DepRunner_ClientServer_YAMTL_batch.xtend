@@ -12,6 +12,7 @@ import org.eclipse.viatra.examples.cps.deployment.Deployment
 import org.eclipse.viatra.examples.cps.deployment.DeploymentPackage
 import org.eclipse.viatra.examples.cps.traceability.TraceabilityFactory
 import org.eclipse.viatra.examples.cps.traceability.TraceabilityPackage
+import yamtl.core.YAMTLModule.ExtentTypeModifier
 
 class Cps2DepRunner_ClientServer_YAMTL_batch extends BenchmarkRunner {
 
@@ -22,8 +23,7 @@ class Cps2DepRunner_ClientServer_YAMTL_batch extends BenchmarkRunner {
     val ROOT_PATH = '/Users/ab373/Documents/ArturData/WORK/git/viatra-cps-batch-benchmark'
         
 	override getIdentifier() {
-		"cps2dep_clientServer_yamtl"
-//		"cps2dep_publishSubscribe_yamtl"
+		"cps2dep_clientServer_yamtl_batch"
 	}
 	
 	override getIterations() {
@@ -50,6 +50,7 @@ class Cps2DepRunner_ClientServer_YAMTL_batch extends BenchmarkRunner {
 
 		xform = new Cps2DepYAMTL
 		xform.fromRoots = false
+		xform.extentTypeModifier = ExtentTypeModifier.LIST
 		
 		// prepare models
 		// this will normally be outside the trafo declaration
@@ -61,11 +62,11 @@ class Cps2DepRunner_ClientServer_YAMTL_batch extends BenchmarkRunner {
 		
 	}
 	
-	override doInitialization(String iteration) {
+	override doInitialization() {
 		// nothing to do
 	}
 	
-	override doTransformation(String iteration) {
+	override doTransformation() {
 		xform.execute()
 
 		// extract DEP model		
@@ -76,12 +77,12 @@ class Cps2DepRunner_ClientServer_YAMTL_batch extends BenchmarkRunner {
 	}
 	
 	override doSave(String iteration) {
-//		var String outputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/clientServer/deployment/yamtl/clientServer_«iteration».deployment.xmi'''
-//		xform.saveOutputModels(#{'dep' -> outputModelPath})
-//		
-//		var String outputTraceModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/clientServer/deployment/yamtl/clientServer_«iteration».traceability.xmi'''
-////		println("save traceability: " + outputTraceModelPath)
-//		xform.saveTraceModel(outputTraceModelPath)
+		var String outputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/clientServer/deployment/yamtl_batch/clientServer_«iteration».deployment.xmi'''
+		xform.saveOutputModels(#{'dep' -> outputModelPath})
+		
+		var String outputTraceModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/clientServer/deployment/yamtl_batch/clientServer_«iteration».traceability.xmi'''
+//		println("save traceability: " + outputTraceModelPath)
+		xform.saveTraceModel(outputTraceModelPath)
 	}
 	
 	override doDispose() {

@@ -9,6 +9,7 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'application'
 
+mainClassName = mainClass
 //mainClassName = "experiments.yamtl.Cps2DepRunner_ClientServer_YAMTL_batch_full"
 //mainClassName = "experiments.yamtl.Cps2DepRunner_PublishSubscribe_YAMTL_batch_full"
 //mainClassName = "experiments.yamtl.Cps2DepRunner_LowSynch_YAMTL_batch_full"
@@ -74,10 +75,10 @@ sourceSets {
 dependencies {
 	// yamtl imported
 	compile "yamtl:yamtl:${version}"
+	compile files("lib/m2m.batch.base-0.0.1-20190830.094447-1.jar")
 	compile "org.eclipse.xtend:org.eclipse.xtend.lib:$xtendVersion"
 	compile "org.eclipse.xtext:org.eclipse.xtext.util:$xtendVersion"
 	
-	compile "arturboronat:m2m.batch.base:0.0.1-SNAPSHOT"
 	compile "com.google.guava:guava-testlib:24.1-jre"
 	// for using @Accessors
 	compile 'org.eclipse.emf:org.eclipse.emf.ecore.xmi:2.15.0' 
@@ -93,11 +94,11 @@ task fatJar(type: Jar) {
 	manifest {
 		attributes 'LoadFmaModelAsXmi': 'Standalone FMA filter for EMF',
 			'Implementation-Version': version,
-			'Main-Class': mainClassName
+			'Main-Class': mainClass
 	}
 	// remove signatures as we are not signing this jar to avoid security warnings
 	exclude 'META-INF/*.RSA', 'META-INF/*.SF','META-INF/*.DSA'
-	baseName = project.name + '-all-' + mainClassName 
+	baseName = project.name + '-all-' + mainClass 
 	from { 
 		configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } 
 	} 

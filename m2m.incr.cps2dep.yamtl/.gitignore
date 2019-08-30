@@ -9,3 +9,4 @@ src/main/xtend-gen
 *.csv
 /ajcore.*
 argfile*
+/output.txt
