@@ -13,10 +13,8 @@ import org.eclipse.emf.ecore.xmi.XMLResource
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl
 import org.eclipse.emf.ecore.xmi.impl.XMLParserPoolImpl
 import org.eclipse.emf.ecore.xmi.impl.XMLResourceImpl
-import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.ApplicationType
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.CyberPhysicalSystem
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.CyberPhysicalSystemPackage
-import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.HostInstance
 import org.eclipse.viatra.examples.cps.deployment.DeploymentFactory
 import org.eclipse.viatra.examples.cps.deployment.DeploymentPackage
 import org.eclipse.viatra.examples.cps.generator.utils.CPSModelBuilderUtil
@@ -27,16 +25,17 @@ import org.eclipse.viatra.examples.cps.xform.m2m.incr.expl.CPS2DeploymentTransfo
 import org.eclipse.viatra.query.runtime.api.AdvancedViatraQueryEngine
 import org.eclipse.viatra.query.runtime.emf.EMFScope
 
-class Cps2DepRunner_ViatraExpl_full_clientServer_modification extends FullBenchmarkRunner {
+class Cps2DepRunner_ViatraExpl_simpleScaling_modification_full extends FullBenchmarkRunner {
+	val trafo = 'simpleScaling'
+	
+	
 	CPS2DeploymentTransformation xform 
-	AdvancedViatraQueryEngine engine  
+	AdvancedViatraQueryEngine engine 
     var CPSToDeployment cps2dep
     extension CPSModelBuilderUtil builderUtil = new CPSModelBuilderUtil
     
-    val ROOT_PATH = '/Users/ab373/Documents/ArturData/WORK/git/viatra-cps-batch-benchmark'
-    
 	override getIdentifier() {
-		"cps2dep_clientServer_viatraExpl_modification"
+		'''cps2dep_«trafo»_viatraExpl'''
 	}
 	
 	override getIterations() {
@@ -46,37 +45,33 @@ class Cps2DepRunner_ViatraExpl_full_clientServer_modification extends FullBenchm
 	}
 
 	def static void main(String[] args) {
-		val runner = new Cps2DepRunner_ViatraExpl_full_clientServer_modification
+		val runner = new Cps2DepRunner_ViatraExpl_simpleScaling_modification_full
 		runner.runBenchmark(10)
 	} 
 	
 	override doLoad(String iteration) {
 		doStandaloneEMFSetup()
 		
-		var String inputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/clientServer/cps'''
-		var String outputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/clientServer/deployment/viatraExpl'''
+		var String inputModelPath = '''/Users/ab373/Documents/ArturData/WORK/git/viatra-cps-batch-benchmark/m2m.batch.data/cps2dep/«trafo»/cps'''
+		var String outputModelPath = '''/Users/ab373/Documents/ArturData/WORK/git/viatra-cps-batch-benchmark/m2m.batch.data/cps2dep/«trafo»/deployment/viatraExpl'''
 
 		cps2dep = preparePersistedCPSModel(
 			URI.createFileURI(new File(inputModelPath).absolutePath),
-			'''clientServer_«iteration»''',
+			'''«trafo»_«iteration»''',
 			URI.createFileURI(new File(outputModelPath).absolutePath)
 		)
 	}
-	
-	    
-	var ApplicationType appType
-	var HostInstance hostInstance
 	    
 	override doInitialization() {
 		engine = AdvancedViatraQueryEngine.createUnmanagedEngine(new EMFScope(cps2dep.eResource.resourceSet));
 		xform = new CPS2DeploymentTransformation
 		xform.initialize(cps2dep, engine)
-		xform.execute()
-		appType = cps2dep.cps.appTypes.findFirst[it.identifier.contains("Client")]
-		hostInstance = cps2dep.cps.hostTypes.findFirst[it.identifier.contains("client")].instances.head
+		xform.execute
 	}
 	
 	override doTransformation() {
+		var appType = cps2dep.cps.appTypes.findFirst[it.identifier.contains("AC")]
+		var hostInstance = cps2dep.cps.hostTypes.findFirst[it.identifier.contains("HC")].instances.head
 		val appID = "new.app.instance" + "_NEW" // nextModificationIndex 
 		appType.prepareApplicationInstanceWithId(appID, hostInstance)
 	}

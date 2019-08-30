@@ -27,7 +27,7 @@ import org.eclipse.viatra.examples.cps.xform.m2m.incr.expl.CPS2DeploymentTransfo
 import org.eclipse.viatra.query.runtime.api.AdvancedViatraQueryEngine
 import org.eclipse.viatra.query.runtime.emf.EMFScope
 
-class Cps2DepRunner_ViatraExpl_statisticBased_full_modification extends FullBenchmarkRunner {
+class Cps2DepRunner_ViatraExpl_Statistics_modification_full extends FullBenchmarkRunner {
 	CPS2DeploymentTransformation xform 
 	AdvancedViatraQueryEngine engine 
     var CPSToDeployment cps2dep
@@ -37,7 +37,7 @@ class Cps2DepRunner_ViatraExpl_statisticBased_full_modification extends FullBenc
     
     
 	override getIdentifier() {
-		"cps2dep_statisticBased_viatraExpl_modification"
+		"cps2dep_statistics_viatraExpl_modification"
 	}
 	
 	override getIterations() {
@@ -46,14 +46,14 @@ class Cps2DepRunner_ViatraExpl_statisticBased_full_modification extends FullBenc
 	}
 
 	def static void main(String[] args) {
-		val runner = new Cps2DepRunner_ViatraExpl_statisticBased_full_modification
+		val runner = new Cps2DepRunner_ViatraExpl_Statistics_modification_full
 		runner.runBenchmark(10)
 	} 
 	
 	override doLoad(String iteration) {
 		doStandaloneEMFSetup()
 		
-		var String inputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/statistics/'''
+		var String inputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/statistics/cps/'''
 		var String outputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/statistics/deployment/viatraExpl'''
 
 		cps2dep = preparePersistedCPSModel(

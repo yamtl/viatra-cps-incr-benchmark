@@ -1,9 +1,8 @@
 package experiments.expl
 
-import experiments.utils.BenchmarkRunner
+import experiments.utils.FullBenchmarkRunner
 import java.io.File
 import java.io.IOException
-import java.util.Collections
 import java.util.HashMap
 import java.util.Map
 import org.eclipse.emf.common.util.URI
@@ -28,28 +27,27 @@ import org.eclipse.viatra.examples.cps.xform.m2m.incr.expl.CPS2DeploymentTransfo
 import org.eclipse.viatra.query.runtime.api.AdvancedViatraQueryEngine
 import org.eclipse.viatra.query.runtime.emf.EMFScope
 
-class Cps2DepRunner_ViatraExpl_clientServer_modification extends BenchmarkRunner {
+class Cps2DepRunner_ViatraExpl_clientServer_modification_full extends FullBenchmarkRunner {
 	CPS2DeploymentTransformation xform 
-	AdvancedViatraQueryEngine engine 
+	AdvancedViatraQueryEngine engine  
     var CPSToDeployment cps2dep
     extension CPSModelBuilderUtil builderUtil = new CPSModelBuilderUtil
     
     val ROOT_PATH = '/Users/ab373/Documents/ArturData/WORK/git/viatra-cps-batch-benchmark'
-    
     
 	override getIdentifier() {
 		"cps2dep_clientServer_viatraExpl_modification"
 	}
 	
 	override getIterations() {
+		#[1, 1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]
 //		#[1, 1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
-		#[1, 1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
 //		#[1]
 	}
 
 	def static void main(String[] args) {
-		val runner = new Cps2DepRunner_ViatraExpl_clientServer_modification
-		runner.runBenchmark
+		val runner = new Cps2DepRunner_ViatraExpl_clientServer_modification_full
+		runner.runBenchmark(10)
 	} 
 	
 	override doLoad(String iteration) {
@@ -65,6 +63,7 @@ class Cps2DepRunner_ViatraExpl_clientServer_modification extends BenchmarkRunner
 		)
 	}
 	
+	    
 	var ApplicationType appType
 	var HostInstance hostInstance
 	    
@@ -83,16 +82,16 @@ class Cps2DepRunner_ViatraExpl_clientServer_modification extends BenchmarkRunner
 	}
 	
 	override doSave(String iteration) {
-		try {
-	      cps2dep.deployment.eResource.save(Collections.EMPTY_MAP);
-	    } catch (IOException e) {
-	      e.printStackTrace();
-	    }
-		try {
-	      cps2dep.eResource.save(Collections.EMPTY_MAP);
-	    } catch (IOException e) {
-	      e.printStackTrace();
-	    }
+//		try {
+//	      cps2dep.deployment.eResource.save(Collections.EMPTY_MAP);
+//	    } catch (IOException e) {
+//	      e.printStackTrace();
+//	    }
+//		try {
+//	      cps2dep.eResource.save(Collections.EMPTY_MAP);
+//	    } catch (IOException e) {
+//	      e.printStackTrace();
+//	    }
 	}
 	
 		
@@ -104,6 +103,7 @@ class Cps2DepRunner_ViatraExpl_clientServer_modification extends BenchmarkRunner
 			engine.dispose
 		}
 		xform = null
+		cps2dep = null
 		engine = null
 	}
 	
@@ -146,8 +146,8 @@ class Cps2DepRunner_ViatraExpl_clientServer_modification extends BenchmarkRunner
 		}
 
 		val targetModelNameURI = targetUri.appendSegment(modelName)
-		val depRes = rs.createResource(targetModelNameURI.appendFileExtension("deployment.modification.xmi"))
-		val trcRes = rs.createResource(targetModelNameURI.appendFileExtension("traceability.modification.xmi"))
+		val depRes = rs.createResource(targetModelNameURI.appendFileExtension("deployment.xmi"))
+		val trcRes = rs.createResource(targetModelNameURI.appendFileExtension("traceability.xmi"))
 		
 		// Artur: to load the model
 //		val cps = createCyberPhysicalSystem => [
@@ -166,7 +166,7 @@ class Cps2DepRunner_ViatraExpl_clientServer_modification extends BenchmarkRunner
 		trcRes.contents += cps2dep
 		cps2dep
 	}
-
+	
 	
 } 
  

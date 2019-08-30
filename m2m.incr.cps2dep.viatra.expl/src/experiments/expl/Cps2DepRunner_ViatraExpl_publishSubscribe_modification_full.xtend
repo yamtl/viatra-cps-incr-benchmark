@@ -25,14 +25,17 @@ import org.eclipse.viatra.examples.cps.xform.m2m.incr.expl.CPS2DeploymentTransfo
 import org.eclipse.viatra.query.runtime.api.AdvancedViatraQueryEngine
 import org.eclipse.viatra.query.runtime.emf.EMFScope
 
-class Cps2DepRunner_ViatraExpl_full_publishSubscribe_modification extends FullBenchmarkRunner {
+class Cps2DepRunner_ViatraExpl_publishSubscribe_modification_full extends FullBenchmarkRunner {
+	val trafo = 'publishSubscribe'
+	
+	
 	CPS2DeploymentTransformation xform 
 	AdvancedViatraQueryEngine engine 
     var CPSToDeployment cps2dep
     extension CPSModelBuilderUtil builderUtil = new CPSModelBuilderUtil
     
 	override getIdentifier() {
-		"cps2dep_publishSubscribe_viatraExpl"
+		'''cps2dep_«trafo»_viatraExpl'''
 	}
 	
 	override getIterations() {
@@ -42,19 +45,19 @@ class Cps2DepRunner_ViatraExpl_full_publishSubscribe_modification extends FullBe
 	}
 
 	def static void main(String[] args) {
-		val runner = new Cps2DepRunner_ViatraExpl_full_publishSubscribe_modification
+		val runner = new Cps2DepRunner_ViatraExpl_publishSubscribe_modification_full
 		runner.runBenchmark(10)
 	} 
 	
 	override doLoad(String iteration) {
 		doStandaloneEMFSetup()
 		
-		var String inputModelPath = '''/Users/ab373/Documents/ArturData/WORK/git/viatra-cps-batch-benchmark/m2m.batch.data/cps2dep/clientServer/cps'''
-		var String outputModelPath = '''/Users/ab373/Documents/ArturData/WORK/git/viatra-cps-batch-benchmark/m2m.batch.data/cps2dep/clientServer/deployment/viatraExpl'''
+		var String inputModelPath = '''/Users/ab373/Documents/ArturData/WORK/git/viatra-cps-batch-benchmark/m2m.batch.data/cps2dep/«trafo»/cps'''
+		var String outputModelPath = '''/Users/ab373/Documents/ArturData/WORK/git/viatra-cps-batch-benchmark/m2m.batch.data/cps2dep/«trafo»/deployment/viatraExpl'''
 
 		cps2dep = preparePersistedCPSModel(
 			URI.createFileURI(new File(inputModelPath).absolutePath),
-			'''clientServer_«iteration»''',
+			'''«trafo»_«iteration»''',
 			URI.createFileURI(new File(outputModelPath).absolutePath)
 		)
 	}
