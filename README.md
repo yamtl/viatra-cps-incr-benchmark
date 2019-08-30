@@ -20,6 +20,8 @@ Our solution:
 
 Existing solutions that have been reused:
 
+* [ATL (with ATOL compiler to AOF)](https://github.com/arturboronat/atol-cps)
+	* reused from [its original repository](https://github.com/TheoLeCalvar/viatra-cps-benchmark) with the help of Théo Le Calvar
 * [VIATRA Query Result Traceability (QRT)](https://github.com/yamtl/viatra-cps-incr-benchmark/blob/master/m2m.incr.cps2dep.viatra.qrt/src/org/eclipse/viatra/examples/cps/xform/m2m/incr/qrt/CPS2DeploymentTransformationQrt.xtend)
     * corresponds [to this case](https://github.com/viatra/viatra-docs/blob/master/cps/Query-result-traceability-M2M-transformation.adoc) in the VIATRA CPS benchmark    
 * [VIATRA Explicit Traceability (EXPL](https://github.com/yamtl/viatra-cps-incr-benchmark/blob/master/m2m.incr.cps2dep.viatra.expl/src/org/eclipse/viatra/examples/cps/xform/m2m/incr/expl/CPS2DeploymentTransformation.xtend)
@@ -47,14 +49,9 @@ MacBookPro11,5 Core i7 2.5 GHz, with four cores and 16 GB of RAM
 
 ### Software used
 
-* ATL EMFTVM (4.0.0)
-* ATL SDK - ATL Transformation Language SDK (4.0.0)
 * CPS metamodels (0.1.0)
-* Eclipse Oxygen.3 (4.7.3) 
-* EMF - Eclipse Modeling Framework SDK (2.13.0)
 * Java(TM) SE Runtime Environment (build 1.8.0\_72-b15)
 * VIATRA Query and Transformation SDK (1.7.2)
-* Xtend SDK Version (2.13.0)
 
 ### Raw results
 
