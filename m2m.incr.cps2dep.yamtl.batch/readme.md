@@ -15,10 +15,10 @@ The most relevant files are the following:
 
 To run the benchmark:
 1. Select the corresponding runner in the Gradle build file, by setting `mainClassName`
-2. Run the command `./gradlew clean run` 
+2. Run the command `./gradlew clean run  -PmainClass=MAIN_CLASS`, where `MAIN_Class` can be `experiments.yamtl.Cps2DepRunner_ClientServer_YAMTL_batch` 
 
 ## Running the benchmark sanity checks
 
 The benchmark sanity checks have been adapted as explained [here](https://github.com/yamtl/viatra-cps-batch-benchmark/tree/master/m2m.batch.cps2dep.yamtl#benchmark-sanity-checks). In addition, changes need to be recorded explicitly, which is achieved using the method `experiments.yamtl.Cps2DepTestDriver_YAMTL::executeTransformation(String, () => Map<String,EObject>)` (under `src/test/java`).
 
-To run the tests: run the command `./gradlew clean test` or run the project with JUnit within the IDE.
+To run the tests, run the tests with JUnit from the IDE.

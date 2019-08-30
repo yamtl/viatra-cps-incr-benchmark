@@ -50,8 +50,10 @@ MacBookPro11,5 Core i7 2.5 GHz, with four cores and 16 GB of RAM
 ### Software used
 
 * CPS metamodels (0.1.0)
-* Java(TM) SE Runtime Environment (build 1.8.0\_72-b15)
 * VIATRA Query and Transformation SDK (1.7.2)
+  * Java(TM) SE Runtime Environment (build 1.8.0\_72-b15)
+* ATOL and YAMTL
+  * Java(TM) SE Runtime Environment 18.9 (build 11.0.2+9-LTS)
 
 ### Raw results
 
