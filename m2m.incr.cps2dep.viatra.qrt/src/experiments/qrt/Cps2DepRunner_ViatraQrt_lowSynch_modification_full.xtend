@@ -28,36 +28,39 @@ import org.eclipse.viatra.examples.cps.xform.m2m.incr.qrt.CPS2DeploymentTransfor
 import org.eclipse.viatra.query.runtime.api.AdvancedViatraQueryEngine
 import org.eclipse.viatra.query.runtime.emf.EMFScope
 
-class Cps2DepRunner_ViatraQrt_full_clientServer_modification extends FullBenchmarkRunner {
+class Cps2DepRunner_ViatraQrt_lowSynch_modification_full extends FullBenchmarkRunner {
+	val trafo = 'lowSynch'
+	val ROOT_PATH = '/Users/ab373/Documents/ArturData/WORK/git/viatra-cps-batch-benchmark'
+	
 	CPS2DeploymentTransformationQrt xform 
 	AdvancedViatraQueryEngine engine
     var CPSToDeployment cps2dep
     extension CPSModelBuilderUtil builderUtil = new CPSModelBuilderUtil
     
 	override getIdentifier() {
-		"cps2dep_clientServer_viatraQrt"
+		'''cps2dep_«trafo»_viatraQrt'''
 	}
 	
 	override getIterations() {
-		#[1, 1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
+		#[1, 1, 8, 16, 32, 64, 128, 256]
 //		#[1, 1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
 //		#[1]
 	}
 
 	def static void main(String[] args) {
-		val runner = new Cps2DepRunner_ViatraQrt_full_clientServer_modification
+		val runner = new Cps2DepRunner_ViatraQrt_lowSynch_modification_full
 		runner.runBenchmark(10)
 	} 
 	
 	override doLoad(String iteration) {
 		doStandaloneEMFSetup()
 		
-		var String inputModelPath = '''../m2m.batch.data/cps2dep/clientServer/cps'''
-		var String outputModelPath = '''../m2m.batch.data/cps2dep/clientServer/deployment/viatraQrt'''
+		var String inputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/«trafo»/cps/'''
+		var String outputModelPath = '''«ROOT_PATH»/m2m.batch.data/cps2dep/«trafo»/deployment/viatraQrt'''
 
 		cps2dep = preparePersistedCPSModel(
 			URI.createFileURI(new File(inputModelPath).absolutePath),
-			'''clientServer_«iteration»''',
+			'''«trafo»_«iteration»''',
 			URI.createFileURI(new File(outputModelPath).absolutePath)
 		)
 	}
@@ -71,8 +74,8 @@ class Cps2DepRunner_ViatraQrt_full_clientServer_modification extends FullBenchma
 		xform = new CPS2DeploymentTransformationQrt
 		xform.initialize(cps2dep, engine)
 		xform.execute()
-		appType = cps2dep.cps.appTypes.findFirst[it.identifier.contains("Client")]
-		hostInstance = cps2dep.cps.hostTypes.findFirst[it.identifier.contains("client")].instances.head
+		appType = cps2dep.cps.appTypes.findFirst[it.identifier.contains("AC")]
+		hostInstance = cps2dep.cps.hostTypes.findFirst[it.identifier.contains("HC")].instances.head
 	}
 	
 	override doTransformation() {
@@ -81,16 +84,16 @@ class Cps2DepRunner_ViatraQrt_full_clientServer_modification extends FullBenchma
 	}
 	
 	override doSave(String iteration) {
-		try {
-	      cps2dep.deployment.eResource.save(Collections.EMPTY_MAP);
-	    } catch (IOException e) {
-	      e.printStackTrace();
-	    }
-		try {
-	      cps2dep.eResource.save(Collections.EMPTY_MAP);
-	    } catch (IOException e) {
-	      e.printStackTrace();
-	    }
+//		try {
+//	      cps2dep.deployment.eResource.save(Collections.EMPTY_MAP);
+//	    } catch (IOException e) {
+//	      e.printStackTrace();
+//	    }
+//		try {
+//	      cps2dep.eResource.save(Collections.EMPTY_MAP);
+//	    } catch (IOException e) {
+//	      e.printStackTrace();
+//	    }
 	}
 	
 		
