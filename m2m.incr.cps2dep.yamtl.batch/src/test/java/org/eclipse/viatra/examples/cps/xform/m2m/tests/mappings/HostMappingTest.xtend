@@ -9,11 +9,9 @@
  *   Akos Horvath, Abel Hegedus, Tamas Borbas, Marton Bur, Zoltan Ujhelyi, Robert Doczi, Daniel Segesdi, Peter Lunk - initial API and implementation
  *******************************************************************************/
 
-package org.eclipse.viatra.examples.cps.xform.m2m.tests.mappings.batch
+package org.eclipse.viatra.examples.cps.xform.m2m.tests.mappings
 
-import experiments.yamtl.Cps2DepTestDriver_YAMTL_batch
-import java.util.Map
-import org.eclipse.emf.ecore.EObject
+import experiments.yamtl.Cps2DepTestDriver_YAMTL
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.HostInstance
 import org.eclipse.viatra.examples.cps.generator.utils.CPSModelBuilderUtil
 import org.eclipse.viatra.examples.cps.traceability.CPSToDeployment
@@ -25,7 +23,7 @@ import static org.junit.Assert.*
 //@RunWith(Parameterized)
 class HostMappingTest extends CPS2DepTest {
 	// Artur
-	val extension Cps2DepTestDriver_YAMTL_batch = new Cps2DepTestDriver_YAMTL_batch
+	val extension Cps2DepTestDriver_YAMTL = new Cps2DepTestDriver_YAMTL
 	val extension CPSModelBuilderUtil = new CPSModelBuilderUtil
 	new() {
 		super()
@@ -39,7 +37,7 @@ class HostMappingTest extends CPS2DepTest {
 		val testId = "singleHost"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val instance = cps2dep.prepareHostInstance
 				
 		cps2dep.initializeTransformation
@@ -66,22 +64,15 @@ class HostMappingTest extends CPS2DepTest {
 		val testId = "hostIncremental"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 				
 		cps2dep.initializeTransformation
 		executeTransformation
 
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			val instance = cps2dep.prepareHostInstance
-			
-			result.put('instance',instance)
-			result
-		])
+		val instance = cps2dep.prepareHostInstance
+		executeTransformation
 		
-		// ORACLE	
-		cps2dep.assertHostMapping(map.get('instance') as HostInstance)
+		cps2dep.assertHostMapping(instance)
 		
 		endTest(testId)
 	}
@@ -91,7 +82,7 @@ class HostMappingTest extends CPS2DepTest {
 		val testId = "removeHost"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		
 		val host = cps2dep.prepareHostTypeWithId("single.cps.host")
 		val ip = "1.1.1.1"
@@ -102,16 +93,10 @@ class HostMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertHostMapping(instance)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Removing host instance from model")
-			host.instances -= instance
-		
-			result	
-		])
+		info("Removing host instance from model")
+		host.instances -= instance
+		executeTransformation
 
-		// ORACLE	
 		assertTrue("Host not removed from deployment", cps2dep.deployment.hosts.empty)
 		assertTrue("Trace not removed", cps2dep.traces.empty)
 		
@@ -123,7 +108,7 @@ class HostMappingTest extends CPS2DepTest {
 		val testId = "changeHostIp"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		
 		val host = cps2dep.prepareHostTypeWithId("single.cps.host")
 		val ip = "1.1.1.1"
@@ -132,16 +117,10 @@ class HostMappingTest extends CPS2DepTest {
 		cps2dep.initializeTransformation
 		executeTransformation
 
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Changing host IP")
-			instance.nodeIp = "1.1.1.2"
-		
-			result
-		])
+		info("Changing host IP")
+		instance.nodeIp = "1.1.1.2"
+		executeTransformation
 
-		// ORACLE	
 		assertTrue("Host IP not changed in deployment", cps2dep.deployment.hosts.head.ip == instance.nodeIp)
 		
 		endTest(testId)

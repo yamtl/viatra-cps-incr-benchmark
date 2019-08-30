@@ -14,8 +14,8 @@ The most relevant files are the following:
 ## Running the benchmark
 
 To run the benchmark:
-1. Select the corresponding runner in the Gradle build file, by setting `mainClassName`.
-2. Run the command `./gradlew clean run` . (Remember to use Java 1.8).
+1. Select the corresponding runner in the Gradle build file, by setting `mainClassName`
+2. Run the command `./gradlew clean run` 
 
 ## Running the benchmark sanity checks
 

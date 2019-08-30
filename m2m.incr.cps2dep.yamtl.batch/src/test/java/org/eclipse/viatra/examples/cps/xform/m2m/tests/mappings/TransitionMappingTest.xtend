@@ -9,11 +9,9 @@
  *   Akos Horvath, Abel Hegedus, Tamas Borbas, Marton Bur, Zoltan Ujhelyi, Robert Doczi, Daniel Segesdi, Peter Lunk - initial API and implementation
  *******************************************************************************/
 
-package org.eclipse.viatra.examples.cps.xform.m2m.tests.mappings.batch
+package org.eclipse.viatra.examples.cps.xform.m2m.tests.mappings
 
-import experiments.yamtl.Cps2DepTestDriver_YAMTL_batch
-import java.util.Map
-import org.eclipse.emf.ecore.EObject
+import experiments.yamtl.Cps2DepTestDriver_YAMTL
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.State
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.Transition
 import org.eclipse.viatra.examples.cps.deployment.BehaviorState
@@ -29,7 +27,7 @@ import static org.junit.Assert.*
 //@RunWith(Parameterized)
 class TransitionMappingTest extends CPS2DepTest {
 	// Artur
-	val extension Cps2DepTestDriver_YAMTL_batch = new Cps2DepTestDriver_YAMTL_batch
+	val extension Cps2DepTestDriver_YAMTL = new Cps2DepTestDriver_YAMTL
 	val extension CPSModelBuilderUtil = new CPSModelBuilderUtil
 	new() {
 		super()
@@ -44,7 +42,7 @@ class TransitionMappingTest extends CPS2DepTest {
 		val testId = "singleTransitionWithoutTarget"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -85,7 +83,7 @@ class TransitionMappingTest extends CPS2DepTest {
 		val testId = "singleTransitionWithTargetState"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -112,7 +110,7 @@ class TransitionMappingTest extends CPS2DepTest {
 		val testId = "transitionIncremental"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -122,17 +120,10 @@ class TransitionMappingTest extends CPS2DepTest {
 		cps2dep.initializeTransformation
 		executeTransformation
 
-				
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			val transition = source.prepareTransition("simple.cps.sm.t", target)
-		
-			result.put('transition', transition)
-			result
-		])
+		val transition = source.prepareTransition("simple.cps.sm.t", target)
+		executeTransformation
 
-		xform.mapping.assertTransitionMapping(map.get('transition') as Transition, source)
+		cps2dep.assertTransitionMapping(transition, source)
 		
 		endTest(testId)
 	}
@@ -142,7 +133,7 @@ class TransitionMappingTest extends CPS2DepTest {
 		val testId = "changeTransitionId"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -153,17 +144,10 @@ class TransitionMappingTest extends CPS2DepTest {
 		cps2dep.initializeTransformation
 		executeTransformation
 
-				
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Changing transition ID")
-			transition.identifier = "simple.cps.sm.t2"
-		
-			result
-		])
+		info("Changing transition ID")
+		transition.identifier = "simple.cps.sm.t2"
+		executeTransformation
 
-		// ORACLE		
 		val behavior = cps2dep.deployment.hosts.head.applications.head.behavior
 		val depTrans = behavior.transitions.head
 		assertNotNull("Transition not transformed", depTrans)
@@ -177,7 +161,7 @@ class TransitionMappingTest extends CPS2DepTest {
 		val testId = "changeTransitionId"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -189,17 +173,10 @@ class TransitionMappingTest extends CPS2DepTest {
 		cps2dep.initializeTransformation
 		executeTransformation
 
-				
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Changing transition target")
-			transition.targetState = target2
-				
-			result
-		])
-		
-		// ORACLE
+		info("Changing transition target")
+		transition.targetState = target2
+		executeTransformation
+
 		val behavior = cps2dep.deployment.hosts.head.applications.head.behavior
 		val depTrans = behavior.transitions.head
 		assertNotNull("Transition not transformed", depTrans)
@@ -214,7 +191,7 @@ class TransitionMappingTest extends CPS2DepTest {
 		val testId = "removeTransition"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -227,16 +204,10 @@ class TransitionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertTransitionMapping(transition, source)
 
-						
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Removing transition from model")
-			source.outgoingTransitions -= transition
-			
-			result
-		])	
-
+		info("Removing transition from model")
+		source.outgoingTransitions -= transition
+		executeTransformation
+		
 		val behavior = cps2dep.deployment.hosts.head.applications.head.behavior
 		assertTrue("Transitions not removed", behavior.transitions.empty)
 		val trace = cps2dep.traces.findFirst[cpsElements.contains(transition)]
@@ -250,7 +221,7 @@ class TransitionMappingTest extends CPS2DepTest {
 		val testId = "removeSourceState"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -263,15 +234,9 @@ class TransitionMappingTest extends CPS2DepTest {
 
 		cps2dep.assertTransitionMapping(transition, source)
 
-				
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Removing source state from model")
-			sm.states -= source
-		
-			result
-		])
+		info("Removing source state from model")
+		sm.states -= source
+		executeTransformation
 		
 		val behavior = cps2dep.deployment.hosts.head.applications.head.behavior
 		assertTrue("Transitions not removed", behavior.transitions.empty)
@@ -286,7 +251,7 @@ class TransitionMappingTest extends CPS2DepTest {
 		val testId = "removeTargetState"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -299,16 +264,11 @@ class TransitionMappingTest extends CPS2DepTest {
 
 		cps2dep.assertTransitionMapping(transition, source)
 
-				
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Removing target state from model")
-			sm.states -= target
-			transition.targetState = null
-			
-			result
-		])
+		info("Removing target state from model")
+		sm.states -= target
+		transition.targetState = null
+		
+		executeTransformation
 		
 		val behavior = cps2dep.deployment.hosts.head.applications.head.behavior
 		assertTrue("Transition not removed", behavior.transitions.empty)
@@ -323,7 +283,7 @@ class TransitionMappingTest extends CPS2DepTest {
 		val testId = "moveTransitionInsideStateMachine"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -337,16 +297,10 @@ class TransitionMappingTest extends CPS2DepTest {
 
 		cps2dep.assertTransitionMapping(transition, source)
 
-				
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Moving transition to other state")
-			source2.outgoingTransitions += transition
-			
-			result
-		])		
-
+		info("Moving transition to other state")
+		source2.outgoingTransitions += transition
+		executeTransformation
+		
 		val behavior = cps2dep.deployment.hosts.head.applications.head.behavior
 		assertFalse("Transitions not mapped", behavior.transitions.empty)
 		val trace = cps2dep.traces.findFirst[cpsElements.contains(transition)]
@@ -365,7 +319,7 @@ class TransitionMappingTest extends CPS2DepTest {
 		val testId = "addApplicationInstanceOfTransition"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -376,14 +330,8 @@ class TransitionMappingTest extends CPS2DepTest {
 		cps2dep.initializeTransformation
 		executeTransformation
 
-				
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			prepareApplicationInstanceWithId(appInstance.type, "simple.cps.app.inst2", hostInstance)
-		
-			result
-		])
+		prepareApplicationInstanceWithId(appInstance.type, "simple.cps.app.inst2", hostInstance)
+		executeTransformation
 		
 		val applications = cps2dep.deployment.hosts.head.applications
 		applications.forEach[
@@ -402,7 +350,7 @@ class TransitionMappingTest extends CPS2DepTest {
 		val testId = "moveApplicationInstanceOfTransition"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -421,17 +369,10 @@ class TransitionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertTransitionMapping(transition, source)
 
-				
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Moving application instance")
-			val appType = appInstance.type
-			appInstance.type = appType2
-			
-			result
-		])	
-
+		info("Moving application instance")
+		appInstance.type = appType2
+		executeTransformation
+		
 		val transTraces = cps2dep.traces.filter[cpsElements.contains(transition)]
 		assertTrue("Transition not moved", transTraces.empty)
 		val trans2Traces = cps2dep.traces.filter[cpsElements.contains(transition2)]
@@ -450,7 +391,7 @@ class TransitionMappingTest extends CPS2DepTest {
 		val testId = "removeApplicationInstanceOfTransition"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -463,16 +404,10 @@ class TransitionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertTransitionMapping(transition, source)
 
-				
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Removing instance from type")
-			appInstance.type.instances -= appInstance
+		info("Removing instance from type")
+		appInstance.type.instances -= appInstance
+		executeTransformation
 		
-			result
-		])
-
 		val traces = cps2dep.traces.filter[cpsElements.contains(transition)]
 		assertTrue("Trace not removed", traces.empty)
 		
@@ -484,7 +419,7 @@ class TransitionMappingTest extends CPS2DepTest {
 		val testId = "removeHostInstanceOfTransition"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -497,17 +432,11 @@ class TransitionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertTransitionMapping(transition, source)
 
-				
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Deleting host instance")
-			cps2dep.cps.hostTypes.head.instances -= hostInstance
-			hostInstance.applications.clear
-				
-			result
-		])
-
+		info("Deleting host instance")
+		cps2dep.cps.hostTypes.head.instances -= hostInstance
+		hostInstance.applications.clear
+		executeTransformation
+		
 		val traces = cps2dep.traces.filter[cpsElements.contains(transition)]
 		assertTrue("Traces not removed", traces.empty)
 		
@@ -519,7 +448,7 @@ class TransitionMappingTest extends CPS2DepTest {
 		val testId = "multipleApplicationInstanceOfTransition"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		appInstance.type.prepareApplicationInstanceWithId("app2", hostInstance)
@@ -534,15 +463,9 @@ class TransitionMappingTest extends CPS2DepTest {
 		cps2dep.initializeTransformation
 		executeTransformation
 
-				
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			val instance = prepareApplicationInstanceWithId(appInstance.type, "simple.cps.app.inst2", hostInstance)
-			
-			result
-		])
-
+		prepareApplicationInstanceWithId(appInstance.type, "simple.cps.app.inst2", hostInstance)
+		executeTransformation
+		
 		val applications = cps2dep.deployment.hosts.head.applications
 		applications.forEach[
 			val behavior = it.behavior

@@ -9,11 +9,9 @@
  *   Akos Horvath, Abel Hegedus, Tamas Borbas, Marton Bur, Zoltan Ujhelyi, Robert Doczi, Daniel Segesdi, Peter Lunk - initial API and implementation
  *******************************************************************************/
 
-package org.eclipse.viatra.examples.cps.xform.m2m.tests.mappings.batch
+package org.eclipse.viatra.examples.cps.xform.m2m.tests.mappings
 
-import experiments.yamtl.Cps2DepTestDriver_YAMTL_batch
-import java.util.Map
-import org.eclipse.emf.ecore.EObject
+import experiments.yamtl.Cps2DepTestDriver_YAMTL
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.ApplicationInstance
 import org.eclipse.viatra.examples.cps.deployment.DeploymentHost
 import org.eclipse.viatra.examples.cps.generator.utils.CPSModelBuilderUtil
@@ -26,7 +24,7 @@ import static org.junit.Assert.*
 //@RunWith(Parameterized)
 class ApplicationMappingTest extends CPS2DepTest {
 	// Artur
-	val extension Cps2DepTestDriver_YAMTL_batch = new Cps2DepTestDriver_YAMTL_batch
+	val extension Cps2DepTestDriver_YAMTL = new Cps2DepTestDriver_YAMTL
 	val extension CPSModelBuilderUtil = new CPSModelBuilderUtil
 	new() {
 		super()
@@ -78,25 +76,16 @@ class ApplicationMappingTest extends CPS2DepTest {
 		val testId = "applicationIncremental"
 		startTest(testId)
 		
-//		val cps2dep = prepareEmptyModel(testId, Cps2DepTestDriver_YAMTL.ROOT_PATH, testId)
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 
 		cps2dep.initializeTransformation
-		
 		executeTransformation
 
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			  
-			val instance = cps2dep.prepareAppInstance(hostInstance)
-			
-			result.put('instance',instance)
-			result
-		])
+		val instance = cps2dep.prepareAppInstance(hostInstance)
+		executeTransformation
 		
-		// ORACLE
-		cps2dep.assertApplicationMapping(map.get('instance') as ApplicationInstance)
+		cps2dep.assertApplicationMapping(instance)
 		
 		endTest(testId)
 	}
@@ -115,22 +104,10 @@ class ApplicationMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertApplicationMapping(instance)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			  
-			info("Removing application instance from model")
-			instance.type.instances -= instance
-			
-			// Artur: not present in initial test:
-			// DeploymentApplications are created when traversing
-			// CPS ApplicationInstances allocated to a CPS HostInstance.
-			// The transformation does not use ApplicationInstance.type.instances
-			// and the propagation does not detect anything to propagate 
-			hostInstance.applications -= instance
-			result
-		])
+		info("Removing application instance from model")
+		instance.type.instances -= instance
+		executeTransformation
 
-		// ORACLE
 		val applications = cps2dep.deployment.hosts.head.applications
 		assertTrue("Application not removed from deployment", applications.empty)
 		assertEquals("Trace not removed", 1, cps2dep.traces.size)
@@ -152,14 +129,9 @@ class ApplicationMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertApplicationMapping(instance)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			  
-			info("Removing application instance from model")
-			hostInstance.applications -= instance
-			
-			result
-		])
+		info("Removing application instance from model")
+		hostInstance.applications -= instance
+		executeTransformation
 
 		val applications = cps2dep.deployment.hosts.head.applications
 		assertTrue("Application not removed from deployment", applications.empty)
@@ -173,7 +145,7 @@ class ApplicationMappingTest extends CPS2DepTest {
 		val testId = "reallocateApplication"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val instance = cps2dep.prepareAppInstance(hostInstance)
 				
@@ -182,26 +154,18 @@ class ApplicationMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertApplicationMapping(instance)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			  
-			val host = cps2dep.prepareHostTypeWithId("single.cps.host2")
-			val hostInstance2 = host.prepareHostInstanceWithIP("single.cps.host2.instance", "1.1.1.2")
-			info("Reallocating application instance to host2")
-			hostInstance2.applications += instance
-			
-			result.put('host', host)
-			result.put('hostInstance2', hostInstance2)
-			result
-		])
-		
+		val host = cps2dep.prepareHostTypeWithId("single.cps.host2")
+		val hostInstance2 = host.prepareHostInstanceWithIP("single.cps.host2.instance", "1.1.1.2")
+		info("Reallocating application instance to host2")
+		hostInstance2.applications += instance
+		executeTransformation
 
 		val traces = cps2dep.traces.filter[cpsElements.contains(hostInstance)]
 		val deploymentHosts = traces.head.deploymentElements.filter(DeploymentHost)
 		val applications = deploymentHosts.head.applications
 		assertTrue("Application not moved from host in deployment", applications.empty)
 		
-		val traces2 = cps2dep.traces.filter[cpsElements.contains(map.get('hostInstance2'))]
+		val traces2 = cps2dep.traces.filter[cpsElements.contains(hostInstance2)]
 		val deploymentHosts2 = traces2.head.deploymentElements.filter(DeploymentHost)
 		val applications2 = deploymentHosts2.head.applications
 		assertFalse("Application not moved to host2 in deployment", applications2.empty)
@@ -223,14 +187,9 @@ class ApplicationMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertApplicationMapping(instance)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			  
-			info("Changing host IP")
-			instance.identifier = "simple.cps.app.instance2"
-
-			result
-		])
+		info("Changing host IP")
+		instance.identifier = "simple.cps.app.instance2"
+		executeTransformation
 
 		val applications = cps2dep.deployment.hosts.head.applications
 		assertEquals("Application ID not changed in deployment", instance.identifier, applications.head.id)
@@ -243,7 +202,7 @@ class ApplicationMappingTest extends CPS2DepTest {
 		val testId = "removeHostInstanceOfApplication"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val instance = cps2dep.prepareAppInstance(hostInstance)
 				
@@ -252,15 +211,10 @@ class ApplicationMappingTest extends CPS2DepTest {
 
 		cps2dep.assertApplicationMapping(instance)
 	
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			  
-			info("Deleting host instance")
-			cps2dep.cps.hostTypes.head.instances -= hostInstance
-			hostInstance.applications.clear
-
-			result
-		])
+		info("Deleting host instance")
+		cps2dep.cps.hostTypes.head.instances -= hostInstance
+		hostInstance.applications.clear
+		executeTransformation
 		
 		val traces = cps2dep.traces.filter[cpsElements.contains(instance)]
 		assertTrue("Traces not removed", traces.empty)

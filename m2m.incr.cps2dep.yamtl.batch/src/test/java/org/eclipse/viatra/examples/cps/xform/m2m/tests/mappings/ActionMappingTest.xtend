@@ -9,14 +9,13 @@
  *   Akos Horvath, Abel Hegedus, Tamas Borbas, Marton Bur, Zoltan Ujhelyi, Robert Doczi, Daniel Segesdi, Peter Lunk - initial API and implementation
  *******************************************************************************/
 
-package org.eclipse.viatra.examples.cps.xform.m2m.tests.mappings.batch
+package org.eclipse.viatra.examples.cps.xform.m2m.tests.mappings
 
-import experiments.yamtl.Cps2DepTestDriver_YAMTL_batch
-import java.util.Map
-import org.eclipse.emf.ecore.EObject
+import experiments.yamtl.Cps2DepTestDriver_YAMTL
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.Transition
 import org.eclipse.viatra.examples.cps.deployment.BehaviorTransition
 import org.eclipse.viatra.examples.cps.generator.utils.CPSModelBuilderUtil
+import org.eclipse.viatra.examples.cps.generator.utils.PersistenceUtil
 import org.eclipse.viatra.examples.cps.traceability.CPSToDeployment
 import org.eclipse.viatra.examples.cps.xform.m2m.tests.CPS2DepTest
 import org.junit.Ignore
@@ -28,7 +27,7 @@ import static org.junit.Assert.*
 //@RunWith(Parameterized)
 class ActionMappingTest extends CPS2DepTest {
 	// Artur
-	val extension Cps2DepTestDriver_YAMTL_batch = new Cps2DepTestDriver_YAMTL_batch
+	val extension Cps2DepTestDriver_YAMTL = new Cps2DepTestDriver_YAMTL
 	val extension CPSModelBuilderUtil = new CPSModelBuilderUtil
 	new() {
 		super()
@@ -44,7 +43,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "sendWithSingleWait"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -92,7 +91,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "sendWithoutWait"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -114,7 +113,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "waitWithoutSend"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -136,7 +135,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "sendWithMultipleWait"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -188,7 +187,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "removeSendActionOfTransition"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -215,14 +214,9 @@ class ActionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertActionMapping(transition, transition2)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Removing send action")
-			transition.action = null
-			
-			result
-		])
+		info("Removing send action")
+		transition.action = null
+		executeTransformation
 		
 		cps2dep.assertNoTrigger(transition)
 
@@ -234,7 +228,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "removeLastWaitTransition"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -261,14 +255,9 @@ class ActionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertActionMapping(transition, transition2)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Removing wait transition")
-			source2.outgoingTransitions -= transition2
-			
-			result
-		])	
+		info("Removing wait transition")
+		source2.outgoingTransitions -= transition2
+		executeTransformation
 		
 		cps2dep.assertNoTrigger(transition)
 
@@ -288,7 +277,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "removeWaitTransitionFromMultiple"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -332,15 +321,10 @@ class ActionMappingTest extends CPS2DepTest {
 		assertTrue("Trigger incorrect (depWait)", depSend.trigger.contains(depWait))
 		assertTrue("Trigger incorrect (depWait3)", depSend.trigger.contains(depWait3))
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Removing one of two wait transitions")
-			source2.outgoingTransitions -= transition2
-			
-			result
-		])
-				
+		info("Removing one of two wait transitions")
+		source2.outgoingTransitions -= transition2
+		executeTransformation
+		
 		cps2dep.assertActionMapping(transition, transition3)
 
 		endTest(testId)
@@ -351,7 +335,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "addFirstWaitTransition"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -365,28 +349,23 @@ class ActionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertNoTrigger(transition)
 
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Adding wait transition")
-			val host2 = cps2dep.prepareHostTypeWithId("simple.cps.host2")
-			val ip2 = "1.1.1.2"
-			val hostInstance2 = host2.prepareHostInstanceWithIP("simple.cps.host2.instance", ip2)
-			hostInstance.communicateWith += hostInstance2
-	
-			val app2 = cps2dep.prepareApplicationTypeWithId("simple.cps.app2")
-			val appInstance2 = app2.prepareApplicationInstanceWithId("simple.cps.app2.instance", hostInstance2)
-			val sm2 = prepareStateMachine(appInstance2.type, "simple.cps.sm2")
-			val source2 = sm2.prepareState("simple.cps.sm2.s1")
-			val target2 = sm2.prepareState("simple.cps.sm2.s2")
-			val transition2 = source2.prepareTransition("simple.cps.sm2.t", target2)
-			transition2.action = "waitForSignal(msgId)"
-			
-			result.put('transition2', transition2)
-			result
-		])
+		info("Adding wait transition")
+		val host2 = cps2dep.prepareHostTypeWithId("simple.cps.host2")
+		val ip2 = "1.1.1.2"
+		val hostInstance2 = host2.prepareHostInstanceWithIP("simple.cps.host2.instance", ip2)
+		hostInstance.communicateWith += hostInstance2
+
+		val app2 = cps2dep.prepareApplicationTypeWithId("simple.cps.app2")
+		val appInstance2 = app2.prepareApplicationInstanceWithId("simple.cps.app2.instance", hostInstance2)
+		val sm2 = prepareStateMachine(appInstance2.type, "simple.cps.sm2")
+		val source2 = sm2.prepareState("simple.cps.sm2.s1")
+		val target2 = sm2.prepareState("simple.cps.sm2.s2")
+		val transition2 = source2.prepareTransition("simple.cps.sm2.t", target2)
+		transition2.action = "waitForSignal(msgId)"
+
+		executeTransformation
 		
-		cps2dep.assertActionMapping(transition, map.get('transition2') as Transition)
+		cps2dep.assertActionMapping(transition, transition2)
 
 		endTest(testId)
 	}
@@ -396,7 +375,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "addecondWaitTransition"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -423,25 +402,20 @@ class ActionMappingTest extends CPS2DepTest {
 
 		cps2dep.assertActionMapping(transition, transition2)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Adding second wait transition")
-			val source3 = sm2.prepareState("simple.cps.sm2.s3")
-			val target3 = sm2.prepareState("simple.cps.sm2.s4")
-			val transition3 = source3.prepareTransition("simple.cps.sm2.t2", target3)
-			transition3.action = "waitForSignal(msgId)"
-
-			result.put('transition3', transition3)
-			result
-		])
-					
+		info("Adding second wait transition")
+		val source3 = sm2.prepareState("simple.cps.sm2.s3")
+		val target3 = sm2.prepareState("simple.cps.sm2.s4")
+		val transition3 = source3.prepareTransition("simple.cps.sm2.t2", target3)
+		transition3.action = "waitForSignal(msgId)"
+		
+		executeTransformation
+		
 		val sendTrace = cps2dep.traces.findFirst[cpsElements.contains(transition)]
 		assertFalse("Send transition not transformed", sendTrace.deploymentElements.empty)
 		
 		val waitTrace = cps2dep.traces.findFirst[cpsElements.contains(transition2)]
 		assertFalse("Wait transition not transformed", waitTrace.deploymentElements.empty)
-		val waitTrace3 = cps2dep.traces.findFirst[cpsElements.contains(map.get('transition3') as Transition)]
+		val waitTrace3 = cps2dep.traces.findFirst[cpsElements.contains(transition3)]
 		assertFalse("Wait transition not transformed", waitTrace3.deploymentElements.empty)
 		
 		val depSend = sendTrace.deploymentElements.head as BehaviorTransition
@@ -459,7 +433,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "changeSendActionOfTransition"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -490,15 +464,10 @@ class ActionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertActionMapping(transition, transition2)
 
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Changing send action")
-			transition.action = "sendSignal(simple.cps.app2, msgId2)"
-			
-			result
-		])
-			
+		info("Changing send action")
+		transition.action = "sendSignal(simple.cps.app2, msgId2)"
+		executeTransformation
+
 		cps2dep.assertActionMapping(transition, transition3)
 
 		endTest(testId)
@@ -509,7 +478,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "changeWaitActionOfTransition"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -541,14 +510,9 @@ class ActionMappingTest extends CPS2DepTest {
 		cps2dep.assertActionMapping(transition, transition3)
 		cps2dep.assertNoTrigger(transition2)
 
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Changing wait action")
-			transition3.action = "waitForSignal(msgId2)"
-		
-			result
-		])
+		info("Changing wait action")
+		transition3.action = "waitForSignal(msgId2)"
+		executeTransformation
 
 		cps2dep.assertActionMapping(transition2, transition3)
 		cps2dep.assertNoTrigger(transition)
@@ -561,7 +525,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "moveApplicationInstanceOfWait"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val host = cps2dep.prepareHostTypeWithId("simple.cps.host")
 		val hostInstance = host.prepareHostInstanceWithIP("simple.cps.host.instance", "1.1.1.1")
 		val app = cps2dep.prepareApplicationTypeWithId("simple.cps.app")
@@ -589,14 +553,9 @@ class ActionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertActionMapping(transition, transition2)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Moving application instance for wait")
-			appInstance2.allocatedTo = hostInstance
-		
-			result
-		])
+		info("Moving application instance for wait")
+		appInstance2.allocatedTo = hostInstance
+		executeTransformation
 		
 		cps2dep.assertActionMapping(transition, transition2)
 		
@@ -609,7 +568,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "removeApplicationInstanceOfWait"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val host = cps2dep.prepareHostTypeWithId("simple.cps.host")
 		val hostInstance = host.prepareHostInstanceWithIP("simple.cps.host.instance", "1.1.1.1")
 		val app = cps2dep.prepareApplicationTypeWithId("simple.cps.app")
@@ -637,16 +596,10 @@ class ActionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertActionMapping(transition, transition2)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Removing application instance for wait")
-			app2.instances -= appInstance2
-			// Artur
-			appInstance2.allocatedTo.applications -= appInstance2
-		
-			result
-		])
+		info("Removing application instance for wait")
+		app2.instances -= appInstance2
+//		appInstance2.allocatedTo = null
+		executeTransformation
 		
 		cps2dep.assertNoTrigger(transition)
 
@@ -658,7 +611,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "addApplicationInstanceOfSend"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val host = cps2dep.prepareHostTypeWithId("simple.cps.host")
 		val hostInstance = host.prepareHostInstanceWithIP("simple.cps.host.instance", "1.1.1.1")
 		val app = cps2dep.prepareApplicationTypeWithId("simple.cps.app")
@@ -686,14 +639,10 @@ class ActionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertActionMapping(transition, transition2)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Adding application instance for send")
-			val instance = app.prepareApplicationInstanceWithId("simple.cps.app.instance2", hostInstance)
+		info("Adding application instance for send")
+		app.prepareApplicationInstanceWithId("simple.cps.app.instance2", hostInstance)
 		
-			result
-		])
+		executeTransformation
 		
 		val sendTrace = cps2dep.traces.findFirst[cpsElements.contains(transition)]
 		assertFalse("Send transition not transformed", sendTrace.deploymentElements.empty)
@@ -716,7 +665,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "moveApplicationInstanceOfSend"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val host = cps2dep.prepareHostTypeWithId("simple.cps.host")
 		val hostInstance = host.prepareHostInstanceWithIP("simple.cps.host.instance", "1.1.1.1")
 		val app = cps2dep.prepareApplicationTypeWithId("simple.cps.app")
@@ -744,14 +693,9 @@ class ActionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertActionMapping(transition, transition2)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Moving application instance for send")
-			appInstance.allocatedTo = hostInstance2
-		
-			result
-		])
+		info("Moving application instance for send")
+		appInstance.allocatedTo = hostInstance2
+		executeTransformation
 
 		cps2dep.assertActionMapping(transition, transition2)
 		
@@ -763,7 +707,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "removeApplicationInstanceOfSend"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val host = cps2dep.prepareHostTypeWithId("simple.cps.host")
 		val hostInstance = host.prepareHostInstanceWithIP("simple.cps.host.instance", "1.1.1.1")
 		val app = cps2dep.prepareApplicationTypeWithId("simple.cps.app")
@@ -791,15 +735,11 @@ class ActionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertActionMapping(transition, transition2)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Removing application instance for send")
-			app.instances -= appInstance
-			appInstance.allocatedTo.applications -= appInstance
-
-			result
-		])		
+		info("Removing application instance for send")
+		
+		app.instances -= appInstance
+		
+		executeTransformation
 		
 		val sendTrace = cps2dep.traces.findFirst[cpsElements.contains(transition)]
 		assertNull("Send transition not removed", sendTrace)
@@ -812,7 +752,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "moveHostInstanceOfWait"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val host = cps2dep.prepareHostTypeWithId("simple.cps.host")
 		val hostInstance = host.prepareHostInstanceWithIP("simple.cps.host.instance", "1.1.1.1")
 		val app = cps2dep.prepareApplicationTypeWithId("simple.cps.app")
@@ -840,14 +780,9 @@ class ActionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertActionMapping(transition, transition2)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Moving host instance for wait")
-			host.instances += hostInstance2
-			
-			result		
-		])
+		info("Moving host instance for wait")
+		host.instances += hostInstance2
+		executeTransformation
 		
 		cps2dep.assertActionMapping(transition, transition2)
 
@@ -859,7 +794,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "removeHostInstanceOfWait"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val host = cps2dep.prepareHostTypeWithId("simple.cps.host")
 		val hostInstance = host.prepareHostInstanceWithIP("simple.cps.host.instance", "1.1.1.1")
 		val app = cps2dep.prepareApplicationTypeWithId("simple.cps.app")
@@ -887,16 +822,11 @@ class ActionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertActionMapping(transition, transition2)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Removing host instance for wait")
-			appInstance2.allocatedTo = null
-			hostInstance.communicateWith -= hostInstance2
-			host2.instances -= hostInstance2
-
-			result		
-		])
+		info("Removing host instance for wait")
+		appInstance2.allocatedTo = null
+		hostInstance.communicateWith -= hostInstance2
+		host2.instances -= hostInstance2
+		executeTransformation
 		
 		cps2dep.assertNoTrigger(transition)
 		
@@ -908,7 +838,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "addHostInstanceOfSend"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val host = cps2dep.prepareHostTypeWithId("simple.cps.host")
 		val hostInstance = host.prepareHostInstanceWithIP("simple.cps.host.instance", "1.1.1.1")
 		val app = cps2dep.prepareApplicationTypeWithId("simple.cps.app")
@@ -936,17 +866,13 @@ class ActionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertActionMapping(transition, transition2)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Adding host instance for send")
-			val hostInstance3 = host.prepareHostInstanceWithIP("simple.cps.host.instance2", "1.1.1.3")
-			hostInstance3.communicateWith += hostInstance2
-			val instance = app.prepareApplicationInstanceWithId("simple.cps.app.instance2", hostInstance3)
-			
-			result
-		])
-
+		info("Adding host instance for send")
+		val hostInstance3 = host.prepareHostInstanceWithIP("simple.cps.host.instance2", "1.1.1.3")
+		hostInstance3.communicateWith += hostInstance2
+		app.prepareApplicationInstanceWithId("simple.cps.app.instance2", hostInstance3)
+		
+		executeTransformation
+		
 		val sendTrace = cps2dep.traces.findFirst[cpsElements.contains(transition)]
 		assertFalse("Send transition not transformed", sendTrace.deploymentElements.empty)
 		
@@ -968,7 +894,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "moveHostInstanceOfSend"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val host = cps2dep.prepareHostTypeWithId("simple.cps.host")
 		val hostInstance = host.prepareHostInstanceWithIP("simple.cps.host.instance", "1.1.1.1")
 		val app = cps2dep.prepareApplicationTypeWithId("simple.cps.app")
@@ -996,14 +922,9 @@ class ActionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertActionMapping(transition, transition2)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Moving host instance for send")
-			host2.instances += hostInstance
-		
-			result
-		])
+		info("Moving host instance for send")
+		host2.instances += hostInstance
+		executeTransformation
 		
 		cps2dep.assertActionMapping(transition, transition2)
 
@@ -1015,7 +936,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "removeHostInstanceOfSend"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val host = cps2dep.prepareHostTypeWithId("simple.cps.host")
 		val hostInstance = host.prepareHostInstanceWithIP("simple.cps.host.instance", "1.1.1.1")
 		val app = cps2dep.prepareApplicationTypeWithId("simple.cps.app")
@@ -1043,15 +964,10 @@ class ActionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertActionMapping(transition, transition2)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Removing host instance for send")
-			host.instances -= hostInstance
-			hostInstance.applications.clear
-		
-			result
-		])
+		info("Removing host instance for send")
+		host.instances -= hostInstance
+		hostInstance.applications.clear
+		executeTransformation
 		
 		val sendTrace = cps2dep.traces.findFirst[cpsElements.contains(transition)]
 		assertNull("Send transition not removed", sendTrace)
@@ -1064,7 +980,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "addHostCommunication"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val host = cps2dep.prepareHostTypeWithId("simple.cps.host")
 		val hostInstance = host.prepareHostInstanceWithIP("simple.cps.host.instance", "1.1.1.1")
 		val app = cps2dep.prepareApplicationTypeWithId("simple.cps.app")
@@ -1090,15 +1006,10 @@ class ActionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertNoTrigger(transition)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Adding host communication")
-			hostInstance.communicateWith += hostInstance2
+		info("Adding host communication")
+		hostInstance.communicateWith += hostInstance2
+		executeTransformation
 		
-			result
-		])
-
 		cps2dep.assertActionMapping(transition, transition2)
 		
 		endTest(testId)
@@ -1110,7 +1021,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "addTransitiveHostCommunication"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val host = cps2dep.prepareHostTypeWithId("simple.cps.host")
 		val hostInstance = host.prepareHostInstanceWithIP("simple.cps.host.instance", "1.1.1.1")
 		val app = cps2dep.prepareApplicationTypeWithId("simple.cps.app")
@@ -1137,16 +1048,11 @@ class ActionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertNoTrigger(transition)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Adding transitive host communication")
-			val hostInstance3 = host.prepareHostInstanceWithIP("simple.cps.host.instance", "1.1.1.3")
-			hostInstance.communicateWith += hostInstance3
-			hostInstance3.communicateWith += hostInstance2
-		
-			result
-		])
+		info("Adding transitive host communication")
+		val hostInstance3 = host.prepareHostInstanceWithIP("simple.cps.host.instance", "1.1.1.3")
+		hostInstance.communicateWith += hostInstance3
+		hostInstance3.communicateWith += hostInstance2
+		executeTransformation
 		
 		cps2dep.assertActionMapping(transition, transition2)
 		
@@ -1158,7 +1064,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "removeHostCommunication"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val host = cps2dep.prepareHostTypeWithId("simple.cps.host")
 		val hostInstance = host.prepareHostInstanceWithIP("simple.cps.host.instance", "1.1.1.1")
 		val app = cps2dep.prepareApplicationTypeWithId("simple.cps.app")
@@ -1185,14 +1091,9 @@ class ActionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertActionMapping(transition, transition2)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Removing host communication")
-			hostInstance.communicateWith -= hostInstance2
-		
-			result
-		])
+		info("Removing host communication")
+		hostInstance.communicateWith -= hostInstance2
+		executeTransformation
 		
 		cps2dep.assertNoTrigger(transition)
 
@@ -1205,7 +1106,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "removeTransitiveHostCommunication"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val host = cps2dep.prepareHostTypeWithId("simple.cps.host")
 		val hostInstance = host.prepareHostInstanceWithIP("simple.cps.host.instance", "1.1.1.1")
 		val app = cps2dep.prepareApplicationTypeWithId("simple.cps.app")
@@ -1235,14 +1136,9 @@ class ActionMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertActionMapping(transition, transition2)
 		
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Removing transitive host communication")
-			hostInstance3.communicateWith -= hostInstance2
-		
-			result
-		])
+		info("Removing transitive host communication")
+		hostInstance3.communicateWith -= hostInstance2
+		executeTransformation
 		
 		cps2dep.assertNoTrigger(transition)
 		
@@ -1254,7 +1150,7 @@ class ActionMappingTest extends CPS2DepTest {
 		val testId = "multipleWaitingAppInstancesOnlyOneCanCommunicate"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val host = cps2dep.prepareHostTypeWithId("simple.cps.host")
 		val hostInstance = host.prepareHostInstanceWithIP("simple.cps.host.instance", "1.1.1.1")
 		val app = cps2dep.prepareApplicationTypeWithId("simple.cps.app")

@@ -9,12 +9,9 @@
  *   Akos Horvath, Abel Hegedus, Tamas Borbas, Marton Bur, Zoltan Ujhelyi, Robert Doczi, Daniel Segesdi, Peter Lunk - initial API and implementation
  *******************************************************************************/
 
-package org.eclipse.viatra.examples.cps.xform.m2m.tests.mappings.batch
+package org.eclipse.viatra.examples.cps.xform.m2m.tests.mappings
 
-import experiments.yamtl.Cps2DepTestDriver_YAMTL_batch
-import java.util.List
-import java.util.Map
-import org.eclipse.emf.ecore.EObject
+import experiments.yamtl.Cps2DepTestDriver_YAMTL
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.State
 import org.eclipse.viatra.examples.cps.cyberPhysicalSystem.StateMachine
 import org.eclipse.viatra.examples.cps.deployment.DeploymentBehavior
@@ -28,7 +25,7 @@ import static org.junit.Assert.*
 //@RunWith(Parameterized)
 class StateMappingTest extends CPS2DepTest {
 	// Artur
-	val extension Cps2DepTestDriver_YAMTL_batch = new Cps2DepTestDriver_YAMTL_batch
+	val extension Cps2DepTestDriver_YAMTL = new Cps2DepTestDriver_YAMTL
 	val extension CPSModelBuilderUtil = new CPSModelBuilderUtil
 	new() {
 		super()
@@ -43,7 +40,7 @@ class StateMappingTest extends CPS2DepTest {
 		val testId = "singleState"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -73,7 +70,7 @@ class StateMappingTest extends CPS2DepTest {
 		val testId = "stateIncremental"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -81,18 +78,10 @@ class StateMappingTest extends CPS2DepTest {
 		cps2dep.initializeTransformation
 		executeTransformation
 
-				
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			val state = sm.prepareState("simple.cps.sm.s1")
-
-			result.put('state', state)			
-			result
-		])			
-
-		// ORACLE
-		cps2dep.assertStateMapping(map.get('state') as State)
+		val state = sm.prepareState("simple.cps.sm.s1")
+		executeTransformation
+		
+		cps2dep.assertStateMapping(state)
 		
 		endTest(testId)
 	}
@@ -102,7 +91,7 @@ class StateMappingTest extends CPS2DepTest {
 		val testId = "initialState"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -125,7 +114,7 @@ class StateMappingTest extends CPS2DepTest {
 		val testId = "changeInitialState"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -135,20 +124,12 @@ class StateMappingTest extends CPS2DepTest {
 		cps2dep.initializeTransformation
 		executeTransformation
 
-				
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			val state2 = sm.prepareState("simple.cps.sm.s2")
-			sm.initial = state2
-			
-			result.put('state2',state2)
-			result
-		])			
+		val state2 = sm.prepareState("simple.cps.sm.s2")
+		sm.initial = state2
+		executeTransformation
 
-		// ORACLE
 		val behavior = cps2dep.deployment.hosts.head.applications.head.behavior
-		val trace = cps2dep.traces.findFirst[cpsElements.contains(map.get('state2') as State)]
+		val trace = cps2dep.traces.findFirst[cpsElements.contains(state2)]
 		assertNotNull("Trace is not created", trace)
 		assertEquals("Initial property not changed", trace.deploymentElements.head, behavior.current)
 		
@@ -160,7 +141,7 @@ class StateMappingTest extends CPS2DepTest {
 		val testId = "changeStateId"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -169,15 +150,9 @@ class StateMappingTest extends CPS2DepTest {
 		cps2dep.initializeTransformation
 		executeTransformation
 
-				
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Changing state  ID.")
-			state.identifier = "simple.cps.sm.s2"
-				
-			result
-		])		
+		info("Changing state  ID.")
+		state.identifier = "simple.cps.sm.s2"
+		executeTransformation
 		
 		val behavior = cps2dep.deployment.hosts.head.applications.head.behavior
 		val depState = behavior.states.head
@@ -192,7 +167,7 @@ class StateMappingTest extends CPS2DepTest {
 		val testId = "removeState"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -203,14 +178,8 @@ class StateMappingTest extends CPS2DepTest {
 
 		cps2dep.assertStateMapping(state)
 		
-						
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			sm.states -= state
-			
-			result
-		])			
+		sm.states -= state
+		executeTransformation
 		
 		val behavior = cps2dep.deployment.hosts.head.applications.head.behavior
 		assertTrue("State not removed", behavior.states.empty)
@@ -225,7 +194,7 @@ class StateMappingTest extends CPS2DepTest {
 		val testId = "removeInitialState"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -237,14 +206,8 @@ class StateMappingTest extends CPS2DepTest {
 
 		cps2dep.assertStateMapping(state)
 
-						
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			sm.states -= state
-		
-			result
-		])
+		sm.states -= state
+		executeTransformation
 		
 		val behavior = cps2dep.deployment.hosts.head.applications.head.behavior
 		assertNull("Current state not removed", behavior.current)
@@ -257,7 +220,7 @@ class StateMappingTest extends CPS2DepTest {
 		val testId = "removeStateMachineOfState"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -268,15 +231,9 @@ class StateMappingTest extends CPS2DepTest {
 
 		cps2dep.assertStateMapping(state)
 
-						
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Removing state machine from app type.")
-			appInstance.type.behavior = null
-				
-			result
-		])		
+		info("Removing state machine from app type.")
+		appInstance.type.behavior = null
+		executeTransformation
 		
 		val trace = cps2dep.traces.findFirst[cpsElements.contains(state)]
 		assertNull("Trace not removed", trace)
@@ -289,7 +246,7 @@ class StateMappingTest extends CPS2DepTest {
 		val testId = "addApplicationInstanceOfState"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -298,15 +255,9 @@ class StateMappingTest extends CPS2DepTest {
 		cps2dep.initializeTransformation
 		executeTransformation
 
-						
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			prepareApplicationInstanceWithId(appInstance.type, "simple.cps.app.inst2", hostInstance)
-			
-			result
-		])
-						
+		prepareApplicationInstanceWithId(appInstance.type, "simple.cps.app.inst2", hostInstance)
+		executeTransformation
+		
 		val applications = cps2dep.deployment.hosts.head.applications
 		applications.forEach[
 			assertNotNull("State not created in deployment", it.behavior.states.head)
@@ -323,7 +274,7 @@ class StateMappingTest extends CPS2DepTest {
 		val testId = "deleteApplicationInstanceOfState"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -334,16 +285,10 @@ class StateMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertStateMapping(state)
 
-				
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Removing instance from type")
-			appInstance.type.instances -= appInstance
-			
-			result
-		])
-				
+		info("Removing instance from type")
+		appInstance.type.instances -= appInstance
+		executeTransformation
+		
 		val traces = cps2dep.traces.filter[cpsElements.contains(state)]
 		assertTrue("Trace not removed", traces.empty)
 
@@ -355,7 +300,7 @@ class StateMappingTest extends CPS2DepTest {
 		val testId = "moveStateMachine"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val appType2 = cps2dep.prepareApplicationTypeWithId("simple.cps.app2")
@@ -367,16 +312,10 @@ class StateMappingTest extends CPS2DepTest {
 		cps2dep.initializeTransformation
 		executeTransformation
 
-				
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Moving state machine")
-			appType2.behavior = sm
-			
-			result
-		])
-				
+		info("Moving state machine")
+		appType2.behavior = sm
+		executeTransformation
+		
 		val traces = cps2dep.traces.filter[cpsElements.contains(state)]
 		assertFalse("Trace for state does not exist", traces.empty)
 		val depState = traces.head.deploymentElements.head
@@ -391,7 +330,7 @@ class StateMappingTest extends CPS2DepTest {
 		val testId = "moveApplicationInstance"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -404,15 +343,9 @@ class StateMappingTest extends CPS2DepTest {
 		cps2dep.initializeTransformation
 		executeTransformation
 
-				
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Moving application instance")
-			appInstance.type = appType2
-				
-			result				
-		])
+		info("Moving application instance")
+		appInstance.type = appType2
+		executeTransformation
 		
 		val stateTraces = cps2dep.traces.filter[cpsElements.contains(state)]
 		assertTrue("State not moved", stateTraces.empty)
@@ -432,7 +365,7 @@ class StateMappingTest extends CPS2DepTest {
 		val testId = "removeHostInstanceOfState"
 		startTest(testId)
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 		val appInstance = cps2dep.prepareAppInstance(hostInstance)
 		val sm = prepareStateMachine(appInstance.type, "simple.cps.sm")
@@ -443,17 +376,11 @@ class StateMappingTest extends CPS2DepTest {
 		
 		cps2dep.assertStateMapping(state)
 
-						
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Deleting host instance")
-			cps2dep.cps.hostTypes.head.instances -= hostInstance
-			hostInstance.applications.clear
-			
-			result				
-		])
-				
+		info("Deleting host instance")
+		cps2dep.cps.hostTypes.head.instances -= hostInstance
+		hostInstance.applications.clear
+		executeTransformation
+		
 		val traces = cps2dep.traces.filter[cpsElements.contains(state)]
 		assertTrue("Traces not removed", traces.empty)
 		
@@ -466,7 +393,7 @@ class StateMappingTest extends CPS2DepTest {
 		startTest(testId)
 
 		
-		val cps2dep = prepareEmptyModel(testId)
+		var cps2dep = prepareEmptyModel(testId)
 		val hostInstance = cps2dep.prepareHostInstance
 
 		val appType = cps2dep.prepareApplicationTypeWithId("simple.cps.app2")
@@ -481,15 +408,10 @@ class StateMappingTest extends CPS2DepTest {
 		cps2dep.initializeTransformation
 		executeTransformation
 		
-						
-		val map = executeTransformation(testId, [
-			val Map<String,EObject> result = newHashMap
-			
-			info("Adding new application instance")
-			val instance = appType.prepareApplicationInstanceWithId("simple.cps.app.instance3",hostInstance)
+		info("Adding new application instance")
+		appType.prepareApplicationInstanceWithId("simple.cps.app.instance3",hostInstance)
 	
-			result
-		])
+		executeTransformation
 		
 		val deploymentBehaviorTraces = cps2dep.traces.filter[it.cpsElements.head instanceof StateMachine]
 		val behaviorDescriptions = deploymentBehaviorTraces.head.deploymentElements

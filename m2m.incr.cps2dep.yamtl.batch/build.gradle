@@ -73,7 +73,6 @@ sourceSets {
 
 
 dependencies {
-	// yamtl imported
 	compile "yamtl:yamtl:${version}"
 	compile files("lib/m2m.batch.base-0.0.1-20190830.094447-1.jar")
 	compile "org.eclipse.xtend:org.eclipse.xtend.lib:$xtendVersion"
